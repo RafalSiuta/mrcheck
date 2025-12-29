@@ -35,8 +35,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   table_calendar: ^3.2.0 #import 'package:table_calendar/table_calendar.dart';
-  provider: ^6.1.2 #import 'package:provider/provider.dart';
   hive_flutter: ^1.1.0 #import 'package:hive_flutter/hive_flutter.dart';
+  google_fonts: ^6.3.2
+  provider: ^6.1.5+1
   intl: ^0.20.2
   
 
