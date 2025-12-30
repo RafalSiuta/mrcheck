@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mrcash/screens/homescreen.dart';
 import 'package:mrcash/screens/summaryscreen.dart';
 import 'package:mrcash/screens/value_creator.dart';
+import 'package:mrcash/screens/walletscreen.dart';
 
 import '../models/nav_model/nav_model.dart';
 import '../models/screen_model/screen_model.dart';
@@ -43,6 +44,11 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
       ),
     ),
     ScreenModel(
+        page: const WalletScreen(),
+        title: NavModel(
+          title: 'portfele',
+        )),
+    ScreenModel(
       page: const CalendarScreen(),
       title: NavModel(
         title: 'kalendarz',
@@ -51,7 +57,7 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
     ScreenModel(
         page: const SummaryScreen(),
         title: NavModel(
-          title: 'podsumowanie',
+          title: 'statystyki',
         )),
 
   ];

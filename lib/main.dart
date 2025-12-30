@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
+        scaffoldBackgroundColor: Colors.white,
         textTheme: TextTheme(
           headlineLarge: GoogleFonts.exo2(
               textStyle: const TextStyle(
@@ -51,6 +52,11 @@ class MyApp extends StatelessWidget {
           splashColor: Colors.transparent,
           splashFactory: NoSplash.splashFactory,
         focusColor: Colors.transparent,
+        cardTheme: CardThemeData(
+          surfaceTintColor: Colors.white70,
+          elevation: 0.5,
+
+        ),
         navigationRailTheme: NavigationRailThemeData(
           labelType: NavigationRailLabelType.all,
           elevation: 0,
