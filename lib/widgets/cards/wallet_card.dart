@@ -6,6 +6,7 @@ class WalletCard extends StatelessWidget {
     this.title = "title",
     this.total = 0,
     this.icon = Icons.attach_money,
+    this.backgroundColor,
     this.onClick,
     super.key,
   });
@@ -13,11 +14,14 @@ class WalletCard extends StatelessWidget {
   final String title;
   final double total;
   final IconData icon;
+  final Color? backgroundColor;
   final VoidCallback? onClick;
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.bodyMedium;
+    const ink = Color(0xFF0F0F0F);
+    final textStyle =
+        Theme.of(context).textTheme.bodyMedium?.copyWith(color: ink);
 
     return SizedBox(
       width: double.infinity,
@@ -27,13 +31,18 @@ class WalletCard extends StatelessWidget {
           onTap: onClick,
           borderRadius: BorderRadius.circular(12),
           child: Card(
+            color: backgroundColor ?? Theme.of(context).cardColor,
+            surfaceTintColor: Colors.transparent,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Stack(
                 children: [
                   Align(
                     alignment: Alignment.topRight,
-                    child: Icon(icon),
+                    child: Icon(
+                      icon,
+                      color: ink,
+                    ),
                   ),
                   Align(
                     alignment: Alignment.bottomLeft,

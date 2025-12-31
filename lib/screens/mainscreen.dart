@@ -135,7 +135,7 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
         backgroundColor:
             Theme.of(context).floatingActionButtonTheme.backgroundColor,
         foregroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, size: 32),
+        child: const Icon(Icons.add, color: Colors.white, size: 32),
         onPressed: () async {
           await Navigator.push(
             context,

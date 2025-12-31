@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../models/value_model/value_item.dart';
 import '../models/wallet_model/wallet.dart';
@@ -14,7 +15,9 @@ class WalletProvider extends ChangeNotifier {
       id: 1,
       title: 'świnka',
       value: 123.45,
-      icon: 1,
+      icon: Icons.account_balance_wallet.codePoint,
+      date: DateTime(2024, 1, 15),
+      color: Colors.white.value,
       itemsList:  [
         ValueItem(
           id: 1,
@@ -34,7 +37,9 @@ class WalletProvider extends ChangeNotifier {
       id: 2,
       title: 'akcje',
       value: 4567.89,
-      icon: 1,
+      icon: Icons.trending_up.codePoint,
+      date: DateTime(2024, 2, 2),
+      color: Colors.white.value,
       itemsList:  [
         ValueItem(
           id: 3,
@@ -54,7 +59,9 @@ class WalletProvider extends ChangeNotifier {
       id: 3,
       title: 'bank',
       value: 321.00,
-      icon: 1,
+      icon: Icons.account_balance.codePoint,
+      date: DateTime(2024, 4, 28),
+      color: Colors.white.value,
       itemsList:  [
         ValueItem(
           id: 5,
@@ -74,7 +81,9 @@ class WalletProvider extends ChangeNotifier {
       id: 4,
       title: 'waluty',
       value: 987.65,
-      icon: 1,
+      icon: Icons.attach_money.codePoint,
+      date: DateTime(2024, 6, 8),
+      color: Colors.white.value,
       itemsList:  [
         ValueItem(
           id: 7,
@@ -97,6 +106,24 @@ class WalletProvider extends ChangeNotifier {
   void updateSettings(SettingsProvider settings) {
     _settings = settings;
     notifyListeners();
+  }
+
+  Wallet createEmptyWallet() {
+    final nextId = _wallets.isEmpty
+        ? 1
+        : _wallets.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
+    final currency = _wallets.isNotEmpty ? _wallets.first.currency : 'zł';
+
+    return Wallet(
+      id: nextId,
+      title: 'nowy portfel',
+      value: 0,
+      icon: Icons.account_balance_wallet.codePoint,
+      color: Colors.white.value,
+      currency: currency,
+      itemsList: const [],
+      date: DateTime.now(),
+    );
   }
 
   void addWallet(Wallet wallet) {

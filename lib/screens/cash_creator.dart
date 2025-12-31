@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../menu_nav/creator_nav.dart';
 import '../models/cash_model/cash.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../models/value_model/value_item.dart';
 import '../providers/cashprovider.dart';
 import '../widgets/cards/cash_card.dart';
+import '../widgets/dialogs/inutdialog.dart';
+import '../widgets/menu_nav/creator_nav.dart';
 
 class CashCreator extends StatefulWidget {
   const CashCreator({
@@ -22,33 +23,25 @@ class CashCreator extends StatefulWidget {
 }
 
 class _CashCreatorState extends State<CashCreator> {
-  late final TextEditingController _itemNameController;
-  late final TextEditingController _itemValueController;
   late final TextEditingController _titleController;
-  final FocusNode _itemNameFocus = FocusNode();
-  final FocusNode _itemValueFocus = FocusNode();
   final FocusNode _titleFocus = FocusNode();
   late List<ValueItem> _items;
   int? _editingIndex;
   late bool _isIncome;
+  late DateTime _selectedDate;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.cash.name);
-    _itemNameController = TextEditingController();
-    _itemValueController = TextEditingController();
     _items = List.of(widget.cash.itemsList);
     _isIncome = widget.cash.isIncome;
+    _selectedDate = widget.cash.date;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _itemNameController.dispose();
-    _itemValueController.dispose();
-    _itemNameFocus.dispose();
-    _itemValueFocus.dispose();
     _titleFocus.dispose();
     super.dispose();
   }
@@ -72,7 +65,7 @@ class _CashCreatorState extends State<CashCreator> {
       id: cashId,
       name: _titleController.text.trim(),
       value: _itemsTotal,
-      date: widget.cash.date,
+      date: _selectedDate,
       isIncome: _isIncome,
       itemsList: _items,
       currency: widget.cash.currency,
@@ -85,59 +78,12 @@ class _CashCreatorState extends State<CashCreator> {
     Navigator.pop(context);
   }
 
-  void _addItem() {
-    final name = _itemNameController.text.trim();
-    final value =
-        double.tryParse(_itemValueController.text.replaceAll(',', '.'));
-    if (name.isEmpty || value == null) return;
-
-    if (_editingIndex != null) {
-      final index = _editingIndex!;
-      final existing = _items[index];
-      setState(() {
-        _items[index] = ValueItem(
-          id: existing.id,
-          name: name,
-          value: value,
-          date: existing.date,
-        );
-      });
-    } else {
-      final nextId = _items.isEmpty
-          ? 1
-          : _items.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
-      final now = DateTime.now();
-      setState(() {
-        _items.add(
-          ValueItem(
-            id: nextId,
-            name: name,
-            value: value,
-            date: now,
-          ),
-        );
-      });
-    }
-    _itemNameController.clear();
-    _itemValueController.clear();
-    _editingIndex = null;
-    _ensureFocus(_itemNameFocus);
-  }
-
-  void _prefillForEdit(ValueItem item) {
-    _itemNameController.text = item.name;
-    _itemValueController.text = item.value.toStringAsFixed(2);
-    _ensureFocus(_itemNameFocus);
-  }
-
   void _removeItem(int index) {
     setState(() {
       _items.removeAt(index);
       if (_editingIndex != null) {
         if (_editingIndex == index) {
           _editingIndex = null;
-          _itemNameController.clear();
-          _itemValueController.clear();
         } else if (_editingIndex! > index) {
           _editingIndex = _editingIndex! - 1;
         }
@@ -145,12 +91,109 @@ class _CashCreatorState extends State<CashCreator> {
     });
   }
 
+  Future<void> _showItemDialog({ValueItem? item, int? index}) async {
+    if (index != null) {
+      setState(() {
+        _editingIndex = index;
+      });
+    }
+    final isEdit = item != null && index != null;
+    final result = await showDialog<InutDialogResult>(
+      context: context,
+      builder: (_) => InutDialog(
+        title: isEdit ? 'Edytuj pozycję' : 'Dodaj pozycję',
+        currency: widget.cash.currency,
+        initialName: item?.name ?? '',
+        initialValue: item != null ? item.value.toStringAsFixed(2) : '',
+        confirmLabel: isEdit ? 'Zapisz' : 'Dodaj',
+      ),
+    );
+
+    if (!mounted) return;
+    if (result == null) {
+      setState(() {
+        _editingIndex = null;
+      });
+      return;
+    }
+
+    setState(() {
+      if (isEdit) {
+        final existing = _items[index!];
+        _items[index!] = ValueItem(
+          id: existing.id,
+          name: result.name,
+          value: result.value,
+          date: existing.date,
+        );
+      } else {
+        final nextId = _items.isEmpty
+            ? 1
+            : _items.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
+        final now = DateTime.now();
+        _items.add(
+          ValueItem(
+            id: nextId,
+            name: result.name,
+            value: result.value,
+            date: now,
+          ),
+        );
+      }
+      _editingIndex = null;
+    });
+  }
+
+  Future<void> _confirmDeleteCash() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Usunąć zapis?'),
+        content: const Text(
+          'To usunie ten zapis. Kontynuować?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Usuń'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      if (widget.cash.id > 0) {
+        context.read<CashProvider>().removeCash(widget.cash.id);
+      }
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = widget.cash.currency;
     const horizontalPadding = EdgeInsets.symmetric(horizontal: 16);
-    final formattedDate =
-        DateFormat('dd MMM yyyy').format(widget.cash.date);
+    final formattedDate = DateFormat('dd MMM yyyy').format(_selectedDate);
 
     return Scaffold(
       body: SafeArea(
@@ -200,14 +243,10 @@ class _CashCreatorState extends State<CashCreator> {
                                   .headlineSmall,
                             ),
                             const SizedBox(height: 8),
-                            Row(
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Text(
-                                  'przychód',
-                                  style: Theme.of(context)
-                                      .inputDecorationTheme
-                                      .helperStyle,
-                                ),
                                 Switch(
                                   value: _isIncome,
                                   onChanged: (val) {
@@ -215,6 +254,12 @@ class _CashCreatorState extends State<CashCreator> {
                                       _isIncome = val;
                                     });
                                   },
+                                ),
+                                Text(
+                                  _isIncome ? 'przychody' : 'wydatki',
+                                  style: Theme.of(context)
+                                      .inputDecorationTheme
+                                      .helperStyle,
                                 ),
                               ],
                             ),
@@ -224,51 +269,20 @@ class _CashCreatorState extends State<CashCreator> {
                       const SizedBox(height: 16),
                       Padding(
                         padding: horizontalPadding,
-                        child: TextField(
-                          controller: _itemNameController,
-                          focusNode: _itemNameFocus,
-                          textInputAction: TextInputAction.next,
-                          onTap: () => _ensureFocus(_itemNameFocus),
-                          onSubmitted: (_) => _ensureFocus(_itemValueFocus),
-                          decoration: const InputDecoration(
-                            labelText: 'Nazwa pozycji',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: horizontalPadding,
-                        child: TextField(
-                          controller: _itemValueController,
-                          focusNode: _itemValueFocus,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
-                          textInputAction: TextInputAction.done,
-                          onTap: () => _ensureFocus(_itemValueFocus),
-                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                          decoration: InputDecoration(
-                            labelText: 'Wartość pozycji',
-                            suffixText: currency,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: horizontalPadding,
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                              backgroundColor: Colors.black54,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                horizontal: 12,
+                                vertical: 10,
                               ),
+                              side: const BorderSide(color: Colors.black54),
+                              foregroundColor: Colors.black87,
                             ),
-                            onPressed: _addItem,
-                            child: const Text('dodaj'),
+                            onPressed: _showItemDialog,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Dodaj pozycję'),
                           ),
                         ),
                       ),
@@ -277,6 +291,7 @@ class _CashCreatorState extends State<CashCreator> {
                         child: Padding(
                           padding: horizontalPadding,
                           child: ListView.separated(
+                            shrinkWrap: true,
                             itemCount: _items.length,
                             separatorBuilder: (_, __) => const Divider(
                               height: 1.5,
@@ -293,10 +308,8 @@ class _CashCreatorState extends State<CashCreator> {
                                 showDate: true,
                                 isEditing: _editingIndex == index,
                                 isIncome: _isIncome,
-                                onEdit: () {
-                                  _editingIndex = index;
-                                  _prefillForEdit(item);
-                                },
+                                onEdit: () =>
+                                    _showItemDialog(item: item, index: index),
                                 onDelete: () => _removeItem(index),
                               );
                             },
@@ -310,7 +323,10 @@ class _CashCreatorState extends State<CashCreator> {
               CreatorNav(
                 items: const [
                   CreatorNavItem(title: 'zapisz', icon: Icons.save),
-                  CreatorNavItem(title: 'kasa', icon: Icons.attach_money),
+                  CreatorNavItem(title: 'dodaj', icon: Icons.add),
+                  CreatorNavItem(title: 'data', icon: Icons.calendar_month),
+                  CreatorNavItem(title: 'rachunek', icon: Icons.camera_alt),
+                  CreatorNavItem(title: 'usuń', icon: Icons.delete),
                   CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
                 ],
                 selectedIndex: -1,
@@ -321,8 +337,18 @@ class _CashCreatorState extends State<CashCreator> {
                       _saveCash();
                       break;
                     case 1:
+                      _showItemDialog();
                       break;
                     case 2:
+                      _pickDate();
+                      break;
+                    case 3:
+                      // rachunek placeholder
+                      break;
+                    case 4:
+                      _confirmDeleteCash();
+                      break;
+                    case 5:
                       Navigator.pop(context);
                       break;
                   }

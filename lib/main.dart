@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mrcash/screens/mainscreen.dart';
 import 'package:mrcash/screens/settingsscreen.dart';
@@ -8,7 +12,39 @@ import 'providers/cashprovider.dart';
 import 'providers/settingsprovider.dart';
 import 'providers/walletprovider.dart';
 
-void main() {
+Future<void> main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  Future<int> getAndroidVersion() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.version.sdkInt;
+    }
+    return 0;
+  }
+
+  final int androidVersion = await getAndroidVersion();
+
+  if (Platform.isAndroid && androidVersion >= 35) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: null,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  } else {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  }
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const MyApp());
 }
 
@@ -18,6 +54,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    const Color ink = Color(0xFF0F0F0F);
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<SettingsProvider>(
@@ -40,86 +77,121 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'MrCash',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-            useMaterial3: true,
-          scaffoldBackgroundColor: Colors.white,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          useMaterial3: true,
+          scaffoldBackgroundColor: const Color(0xfff5f5f5),
           textTheme: TextTheme(
             headlineLarge: GoogleFonts.exo2(
-                textStyle: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w600
-                )),
+              textStyle: TextStyle(
+                color: ink,
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             headlineMedium: GoogleFonts.exo2(
-              textStyle: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.none),
+              textStyle: TextStyle(
+                fontSize: 18,
+                color: ink,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.none,
+              ),
             ),
             labelMedium: GoogleFonts.exo2(
-              textStyle: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.none),
+              textStyle: TextStyle(
+                fontSize: 12,
+                color: ink,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.none,
+              ),
             ),
             bodyMedium: GoogleFonts.exo2(
-              textStyle: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w300,
-                  decoration: TextDecoration.none),
+              textStyle: TextStyle(
+                fontSize: 12,
+                color: ink,
+                fontWeight: FontWeight.w300,
+                decoration: TextDecoration.none,
+              ),
             ),
           ),
-            splashColor: Colors.transparent,
-            splashFactory: NoSplash.splashFactory,
-          focusColor: Colors.transparent,
-          cardTheme: CardThemeData(
-            surfaceTintColor: Colors.white70,
-            elevation: 0.5,
-
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: ink,
+            ),
           ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: ink,
+              side: const BorderSide(color: ink),
+            ),
+          ),
+          splashColor: Colors.transparent,
+          splashFactory: NoSplash.splashFactory,
+          focusColor: Colors.transparent,
+          cardTheme: const CardThemeData(
+            color: Colors.white,
+            surfaceTintColor: Colors.white,
+            elevation: 0.5,
+          ),
+          cardColor: Colors.white,
           navigationRailTheme: NavigationRailThemeData(
             labelType: NavigationRailLabelType.all,
             elevation: 0,
             groupAlignment: -0.2,
             useIndicator: true,
             indicatorColor: Colors.transparent,
-            selectedIconTheme: IconThemeData(
-              color: Colors.amber
+            selectedIconTheme: const IconThemeData(
+              color: ink,
             ),
-            unselectedIconTheme: IconThemeData(
-              color: Colors.grey
+            unselectedIconTheme: const IconThemeData(
+              color: Colors.grey,
             ),
             selectedLabelTextStyle: GoogleFonts.exo2(
               textStyle: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.none),
+                fontSize: 18,
+                color: ink,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.none,
+              ),
             ),
             unselectedLabelTextStyle: GoogleFonts.exo2(
               textStyle: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w300,
-                  decoration: TextDecoration.none),
-            )
+                fontSize: 18,
+                color: Colors.grey,
+                fontWeight: FontWeight.w300,
+                decoration: TextDecoration.none,
+              ),
+            ),
           ),
-          iconTheme: IconThemeData(
-            color: Colors.black54,
-            size: 18
+          iconTheme: const IconThemeData(
+            color: ink,
+            size: 18,
           ),
-          floatingActionButtonTheme: FloatingActionButtonThemeData(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.transparent,
-              elevation: 0.2,
-              splashColor: Colors.transparent,
-              iconSize: 18,
-
-          )
+          switchTheme: SwitchThemeData(
+            trackColor: WidgetStateProperty.resolveWith<Color>(
+                (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
+                return ink;
+              }
+              return Colors.grey;
+            }),
+            trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+            thumbColor: WidgetStateProperty.resolveWith<Color>(
+                (Set<WidgetState> states) {
+              if (states.contains(WidgetState.disabled)) {
+                return Colors.grey;
+              }
+              return Colors.white;
+            }),
+          ),
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            backgroundColor: ink,
+            foregroundColor: ink,
+            elevation: 0.2,
+            splashColor: Colors.transparent,
+            iconSize: 18,
+          ),
         ),
         initialRoute: '/',
         onGenerateRoute: (route) => onGenerateRoute(route),

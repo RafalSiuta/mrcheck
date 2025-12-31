@@ -3,10 +3,15 @@ import 'package:mrcash/models/wallet_model/wallet.dart';
 import 'package:mrcash/models/value_model/value_item.dart';
 import 'package:provider/provider.dart';
 
-import '../menu_nav/creator_nav.dart';
+import '../models/color_model/color_option.dart';
+import '../models/icon_model/icon_option.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../providers/walletprovider.dart';
 import '../widgets/cards/cash_card.dart';
+import '../widgets/dialogs/color_dialog.dart';
+import '../widgets/dialogs/icon_dialog.dart';
+import '../widgets/dialogs/inutdialog.dart';
+import '../widgets/menu_nav/creator_nav.dart';
 
 class WalletCreator extends StatefulWidget {
   const WalletCreator({
@@ -24,21 +29,25 @@ class WalletCreator extends StatefulWidget {
 
 class _WalletCreatorState extends State<WalletCreator> {
   late final TextEditingController _titleController;
-  late final TextEditingController _itemNameController;
-  late final TextEditingController _itemValueController;
   final FocusNode _titleFocus = FocusNode();
-  final FocusNode _itemNameFocus = FocusNode();
-  final FocusNode _itemValueFocus = FocusNode();
   late List<ValueItem> _items;
   int? _editingIndex;
+  late DateTime _walletDate;
+  late int _selectedColorValue;
+  late int _selectedIconCode;
+  Color get _selectedColor => Color(_selectedColorValue);
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.wallet.title);
-    _itemNameController = TextEditingController();
-    _itemValueController = TextEditingController();
     _items = List.of(widget.wallet.itemsList);
+    _walletDate = widget.wallet.date;
+    _selectedColorValue =
+        widget.wallet.color == 0 ? Colors.white.value : widget.wallet.color;
+    _selectedIconCode = widget.wallet.icon == 0
+        ? Icons.account_balance_wallet.codePoint
+        : widget.wallet.icon;
 
     if (widget.editEnable) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,11 +59,7 @@ class _WalletCreatorState extends State<WalletCreator> {
   @override
   void dispose() {
     _titleController.dispose();
-    _itemNameController.dispose();
-    _itemValueController.dispose();
     _titleFocus.dispose();
-    _itemNameFocus.dispose();
-    _itemValueFocus.dispose();
     super.dispose();
   }
 
@@ -77,8 +82,10 @@ class _WalletCreatorState extends State<WalletCreator> {
       id: walletId,
       title: _titleController.text.trim(),
       value: _itemsTotal,
-      icon: widget.wallet.icon,
+      icon: _selectedIconCode,
       currency: widget.wallet.currency,
+      color: _selectedColorValue,
+      date: _walletDate,
       itemsList: _items,
     );
     if (provider.wallets.any((w) => w.id == walletId)) {
@@ -89,61 +96,152 @@ class _WalletCreatorState extends State<WalletCreator> {
     Navigator.pop(context);
   }
 
-  void _addItem() {
-    final name = _itemNameController.text.trim();
-    final value =
-        double.tryParse(_itemValueController.text.replaceAll(',', '.'));
-    if (name.isEmpty || value == null) return;
-
-    if (_editingIndex != null) {
-      final index = _editingIndex!;
-      final existing = _items[index];
+  Future<void> _showItemDialog({ValueItem? item, int? index}) async {
+    if (index != null) {
       setState(() {
-        _items[index] = ValueItem(
+        _editingIndex = index;
+      });
+    }
+    final isEdit = item != null && index != null;
+    final result = await showDialog<InutDialogResult>(
+      context: context,
+      builder: (_) => InutDialog(
+        title: isEdit ? 'Edytuj pozycję' : 'Dodaj pozycję',
+        currency: widget.wallet.currency,
+        initialName: item?.name ?? '',
+        initialValue: item != null ? item.value.toStringAsFixed(2) : '',
+        confirmLabel: isEdit ? 'Zapisz' : 'Dodaj',
+      ),
+    );
+
+    if (!mounted) return;
+    if (result == null) {
+      setState(() {
+        _editingIndex = null;
+      });
+      return;
+    }
+
+    setState(() {
+      if (isEdit) {
+        final existing = _items[index!];
+        _items[index!] = ValueItem(
           id: existing.id,
-          name: name,
-          value: value,
+          name: result.name,
+          value: result.value,
           date: existing.date,
         );
-      });
-    } else {
-      final nextId = _items.isEmpty
-          ? 1
-          : _items.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
-      final now = DateTime.now();
-      setState(() {
+      } else {
+        final nextId = _items.isEmpty
+            ? 1
+            : _items.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
+        final now = DateTime.now();
         _items.add(
           ValueItem(
             id: nextId,
-            name: name,
-            value: value,
+            name: result.name,
+            value: result.value,
             date: now,
           ),
         );
-      });
-    }
-    _itemNameController.clear();
-    _itemValueController.clear();
-    _editingIndex = null;
-    _ensureFocus(_itemNameFocus);
+      }
+      _editingIndex = null;
+    });
   }
 
-  void _prefillForEdit(ValueItem item) {
-    _itemNameController.text = item.name;
-    _itemValueController.text = item.value.toStringAsFixed(2);
-    _ensureFocus(_itemNameFocus);
+  void _removeItem(int index) {
+    setState(() {
+      _items.removeAt(index);
+      if (_editingIndex != null) {
+        if (_editingIndex == index) {
+          _editingIndex = null;
+        } else if (_editingIndex! > index) {
+          _editingIndex = _editingIndex! - 1;
+        }
+      }
+    });
+  }
+
+  Future<void> _pickColor() async {
+    final initialId = ColorDialog.options
+        .firstWhere(
+          (option) => option.color.value == _selectedColorValue,
+          orElse: () => const ColorOption(id: 0, color: Colors.white),
+        )
+        .id;
+
+    final selected = await showDialog<ColorOption>(
+      context: context,
+      builder: (_) => ColorDialog(initialId: initialId),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedColorValue = selected.color.value;
+      });
+    }
+  }
+
+  Future<void> _pickIcon() async {
+    final initialId = IconDialog.options
+        .firstWhere(
+          (option) => option.iconData.codePoint == _selectedIconCode,
+          orElse: () => IconDialog.options.first,
+        )
+        .id;
+
+    final selected = await showDialog<IconOption>(
+      context: context,
+      builder: (_) => IconDialog(initialId: initialId),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedIconCode = selected.iconData.codePoint;
+      });
+    }
+  }
+
+  Future<void> _confirmDeleteCash() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Usunąć zapis?'),
+        content: const Text(
+          'To usunie ten zapis i wszystkie pozycje listy. Kontynuować?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Usuń'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      if (widget.wallet.id > 0) {
+        context.read<WalletProvider>().removeWallet(widget.wallet.id);
+      }
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final iconData = IconData(widget.wallet.icon, fontFamily: 'MaterialIcons');
-    final iconToShow = widget.wallet.icon == 1
-        ? Icons.account_balance_wallet
-        : iconData;
+    final iconData =
+        IconData(_selectedIconCode, fontFamily: 'MaterialIcons');
     final currency = widget.wallet.currency;
     const horizontalPadding = EdgeInsets.symmetric(horizontal: 16);
 
     return Scaffold(
+      backgroundColor: _selectedColor,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -166,7 +264,7 @@ class _WalletCreatorState extends State<WalletCreator> {
                           textInputAction: TextInputAction.next,
                           onTap: () => _ensureFocus(_titleFocus),
                           onChanged: (_) => setState(() {}),
-                          onSubmitted: (_) => _ensureFocus(_itemNameFocus),
+                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
                           decoration: InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
@@ -180,13 +278,13 @@ class _WalletCreatorState extends State<WalletCreator> {
                             prefixIcon: Container(
                               margin: const EdgeInsets.only(right: 8),
                               decoration: BoxDecoration(
-                                color: Colors.black54,
+                                color: const Color(0xFF0F0F0F),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: IconButton(
                                 iconSize: 24,
                                 icon: Icon(
-                                  iconToShow,
+                                  iconData,
                                   color: Colors.white,
                                   size: 20,
                                 ),
@@ -195,7 +293,7 @@ class _WalletCreatorState extends State<WalletCreator> {
                                   minWidth: 40,
                                   minHeight: 40,
                                 ),
-                                onPressed: () => _ensureFocus(_titleFocus),
+                                onPressed: () => _pickIcon(),
                               ),
                             ),
                           ),
@@ -212,51 +310,20 @@ class _WalletCreatorState extends State<WalletCreator> {
                       const SizedBox(height: 16),
                       Padding(
                         padding: horizontalPadding,
-                        child: TextField(
-                          controller: _itemNameController,
-                          focusNode: _itemNameFocus,
-                          textInputAction: TextInputAction.next,
-                          onTap: () => _ensureFocus(_itemNameFocus),
-                          onSubmitted: (_) => _ensureFocus(_itemValueFocus),
-                          decoration: const InputDecoration(
-                            labelText: 'Nazwa pozycji',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: horizontalPadding,
-                        child: TextField(
-                          controller: _itemValueController,
-                          focusNode: _itemValueFocus,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
-                          textInputAction: TextInputAction.done,
-                          onTap: () => _ensureFocus(_itemValueFocus),
-                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                          decoration: InputDecoration(
-                            labelText: 'Wartość pozycji',
-                            suffixText: currency,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: horizontalPadding,
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              backgroundColor: Colors.black54,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
                               ),
+                              side: const BorderSide(color: Colors.black54),
+                              foregroundColor: Colors.black87,
                             ),
-                            onPressed: _addItem,
-                            child: const Text('dodaj'),
+                            onPressed: _showItemDialog,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Dodaj pozycję'),
                           ),
                         ),
                       ),
@@ -280,24 +347,9 @@ class _WalletCreatorState extends State<WalletCreator> {
                                 currency: currency,
                                 showDate: true,
                                 isEditing: _editingIndex == index,
-                                onEdit: () {
-                                  _editingIndex = index;
-                                  _prefillForEdit(item);
-                                },
-                                onDelete: () {
-                                  setState(() {
-                                    _items.removeAt(index);
-                                    if (_editingIndex != null) {
-                                      if (_editingIndex == index) {
-                                        _editingIndex = null;
-                                        _itemNameController.clear();
-                                        _itemValueController.clear();
-                                      } else if (_editingIndex! > index) {
-                                        _editingIndex = _editingIndex! - 1;
-                                      }
-                                    }
-                                  });
-                                },
+                                onEdit: () =>
+                                    _showItemDialog(item: item, index: index),
+                                onDelete: () => _removeItem(index),
                               );
                             },
                           ),
@@ -310,7 +362,11 @@ class _WalletCreatorState extends State<WalletCreator> {
               CreatorNav(
                 items: const [
                   CreatorNavItem(title: 'zapisz', icon: Icons.save),
-                  CreatorNavItem(title: 'kasa', icon: Icons.attach_money),
+                  CreatorNavItem(title: 'dodaj', icon: Icons.add),
+                  CreatorNavItem(title: 'waluta', icon: Icons.attach_money),
+                  CreatorNavItem(title: 'symbol', icon: Icons.account_balance_wallet),
+                  CreatorNavItem(title: 'kolor', icon: Icons.color_lens),
+                  CreatorNavItem(title: 'usuń', icon: Icons.delete),
                   CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
                 ],
                 selectedIndex: -1,
@@ -321,8 +377,21 @@ class _WalletCreatorState extends State<WalletCreator> {
                       _saveWallet();
                       break;
                     case 1:
+                      _showItemDialog();
                       break;
                     case 2:
+                      //pick currency
+                      break;
+                    case 3:
+                      _pickIcon();
+                      break;
+                    case 4:
+                      _pickColor();
+                      break;
+                    case 5:
+                      _confirmDeleteCash();
+                      break;
+                    case 6:
                       Navigator.pop(context);
                       break;
                   }

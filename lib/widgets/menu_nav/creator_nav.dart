@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/nav_model/creator_nav_item.dart';
+import '../../models/nav_model/creator_nav_item.dart';
 
 class CreatorNav extends StatelessWidget {
   const CreatorNav({
@@ -25,15 +25,14 @@ class CreatorNav extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8.0, left: 8.0),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+        color: backgroundColor ?? const Color(0xFF0F0F0F),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(15),
           bottomLeft: Radius.circular(15),
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                Theme.of(context).unselectedWidgetColor.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: 0.45),
             blurRadius: 1.0,
             offset: const Offset(.0, .0),
             spreadRadius: 1.0,
@@ -54,10 +53,7 @@ class CreatorNav extends StatelessWidget {
             direction: Axis.vertical,
             children: List.generate(items.length, (index) {
               final item = items[index];
-              final selected = selectedIndex == index;
-              final color = selected
-                  ? Theme.of(context).indicatorColor
-                  : Theme.of(context).unselectedWidgetColor;
+              const color = Colors.white;
               return Padding(
                 padding:
                     const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 10.0),
@@ -79,9 +75,7 @@ class CreatorNav extends StatelessWidget {
                         item.title,
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
-                            .inputDecorationTheme
-                            .helperStyle
-                            ?.copyWith(
+                            .textTheme.bodyMedium!.copyWith(
                               fontSize: navIconSize * 0.3,
                               color: color,
                             ),
