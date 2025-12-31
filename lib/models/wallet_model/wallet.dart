@@ -1,4 +1,4 @@
-import 'package:mrcash/models/wallet_model/wallet_item.dart';
+import 'package:mrcash/models/value_model/value_item.dart';
 
 class Wallet {
   const Wallet({
@@ -15,5 +15,5 @@ class Wallet {
   final double value;
   final int icon;
   final String currency;
-  final List<WalletItem> itemsList;
+  final List<ValueItem> itemsList;
 }

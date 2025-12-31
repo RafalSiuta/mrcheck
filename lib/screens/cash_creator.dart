@@ -1,50 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:mrcash/models/wallet_model/wallet.dart';
-import 'package:mrcash/models/value_model/value_item.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../menu_nav/creator_nav.dart';
+import '../models/cash_model/cash.dart';
 import '../models/nav_model/creator_nav_item.dart';
-import '../providers/walletprovider.dart';
+import '../models/value_model/value_item.dart';
+import '../providers/cashprovider.dart';
 import '../widgets/cards/cash_card.dart';
 
-class WalletCreator extends StatefulWidget {
-  const WalletCreator({
-    required this.wallet,
-    this.editEnable = false,
+class CashCreator extends StatefulWidget {
+  const CashCreator({
+    required this.cash,
     super.key,
   });
 
-  final Wallet wallet;
-  final bool editEnable;
+  final Cash cash;
 
   @override
-  State<WalletCreator> createState() => _WalletCreatorState();
+  State<CashCreator> createState() => _CashCreatorState();
 }
 
-class _WalletCreatorState extends State<WalletCreator> {
-  late final TextEditingController _titleController;
+class _CashCreatorState extends State<CashCreator> {
   late final TextEditingController _itemNameController;
   late final TextEditingController _itemValueController;
-  final FocusNode _titleFocus = FocusNode();
+  late final TextEditingController _titleController;
   final FocusNode _itemNameFocus = FocusNode();
   final FocusNode _itemValueFocus = FocusNode();
+  final FocusNode _titleFocus = FocusNode();
   late List<ValueItem> _items;
   int? _editingIndex;
+  late bool _isIncome;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.wallet.title);
+    _titleController = TextEditingController(text: widget.cash.name);
     _itemNameController = TextEditingController();
     _itemValueController = TextEditingController();
-    _items = List.of(widget.wallet.itemsList);
-
-    if (widget.editEnable) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _ensureFocus(_titleFocus);
-      });
-    }
+    _items = List.of(widget.cash.itemsList);
+    _isIncome = widget.cash.isIncome;
   }
 
   @override
@@ -52,9 +47,9 @@ class _WalletCreatorState extends State<WalletCreator> {
     _titleController.dispose();
     _itemNameController.dispose();
     _itemValueController.dispose();
-    _titleFocus.dispose();
     _itemNameFocus.dispose();
     _itemValueFocus.dispose();
+    _titleFocus.dispose();
     super.dispose();
   }
 
@@ -67,24 +62,25 @@ class _WalletCreatorState extends State<WalletCreator> {
   double get _itemsTotal =>
       _items.fold<double>(0, (sum, item) => sum + item.value);
 
-  void _saveWallet() {
-    final provider = context.read<WalletProvider>();
-    final nextId = provider.wallets.isEmpty
+  void _saveCash() {
+    final provider = context.read<CashProvider>();
+    final nextId = provider.cashList.isEmpty
         ? 1
-        : provider.wallets.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
-    final walletId = widget.wallet.id > 0 ? widget.wallet.id : nextId;
-    final updatedWallet = Wallet(
-      id: walletId,
-      title: _titleController.text.trim(),
+        : provider.cashList.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
+    final cashId = widget.cash.id > 0 ? widget.cash.id : nextId;
+    final updatedCash = Cash(
+      id: cashId,
+      name: _titleController.text.trim(),
       value: _itemsTotal,
-      icon: widget.wallet.icon,
-      currency: widget.wallet.currency,
+      date: widget.cash.date,
+      isIncome: _isIncome,
       itemsList: _items,
+      currency: widget.cash.currency,
     );
-    if (provider.wallets.any((w) => w.id == walletId)) {
-      provider.updateWallet(updatedWallet);
+    if (provider.cashList.any((c) => c.id == cashId)) {
+      provider.updateCash(updatedCash);
     } else {
-      provider.addWallet(updatedWallet);
+      provider.addCash(updatedCash);
     }
     Navigator.pop(context);
   }
@@ -134,14 +130,27 @@ class _WalletCreatorState extends State<WalletCreator> {
     _ensureFocus(_itemNameFocus);
   }
 
+  void _removeItem(int index) {
+    setState(() {
+      _items.removeAt(index);
+      if (_editingIndex != null) {
+        if (_editingIndex == index) {
+          _editingIndex = null;
+          _itemNameController.clear();
+          _itemValueController.clear();
+        } else if (_editingIndex! > index) {
+          _editingIndex = _editingIndex! - 1;
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final iconData = IconData(widget.wallet.icon, fontFamily: 'MaterialIcons');
-    final iconToShow = widget.wallet.icon == 1
-        ? Icons.account_balance_wallet
-        : iconData;
-    final currency = widget.wallet.currency;
+    final currency = widget.cash.currency;
     const horizontalPadding = EdgeInsets.symmetric(horizontal: 16);
+    final formattedDate =
+        DateFormat('dd MMM yyyy').format(widget.cash.date);
 
     return Scaffold(
       body: SafeArea(
@@ -150,7 +159,6 @@ class _WalletCreatorState extends State<WalletCreator> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -159,54 +167,58 @@ class _WalletCreatorState extends State<WalletCreator> {
                     children: [
                       Padding(
                         padding: horizontalPadding,
-                        child: TextField(
-                          controller: _titleController,
-                          focusNode: _titleFocus,
-                          style: Theme.of(context).textTheme.headlineLarge,
-                          textInputAction: TextInputAction.next,
-                          onTap: () => _ensureFocus(_titleFocus),
-                          onChanged: (_) => setState(() {}),
-                          onSubmitted: (_) => _ensureFocus(_itemNameFocus),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.primary,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              formattedDate,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineLarge,
+                            ),
+                            TextField(
+                              controller: _titleController,
+                              focusNode: _titleFocus,
+                              style: Theme.of(context).textTheme.headlineLarge,
+                              textInputAction: TextInputAction.next,
+                              onTap: () => _ensureFocus(_titleFocus),
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.transparent),
+                                ),
+                                hintText: 'Tytuł',
                               ),
                             ),
-                            hintText: 'Tytuł portfela',
-                            prefixIcon: Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: IconButton(
-                                iconSize: 24,
-                                icon: Icon(
-                                  iconToShow,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 40,
-                                  minHeight: 40,
-                                ),
-                                onPressed: () => _ensureFocus(_titleFocus),
-                              ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'razem: ${_itemsTotal.toStringAsFixed(2)} $currency',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall,
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: horizontalPadding,
-                        child: Text(
-                          'Suma: ${_itemsTotal.toStringAsFixed(2)} $currency',
-                          style: Theme.of(context).textTheme.headlineSmall,
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  'przychód',
+                                  style: Theme.of(context)
+                                      .inputDecorationTheme
+                                      .helperStyle,
+                                ),
+                                Switch(
+                                  value: _isIncome,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _isIncome = val;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -247,8 +259,8 @@ class _WalletCreatorState extends State<WalletCreator> {
                           alignment: Alignment.centerLeft,
                           child: TextButton(
                             style: TextButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
                               backgroundColor: Colors.black54,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
@@ -267,8 +279,8 @@ class _WalletCreatorState extends State<WalletCreator> {
                           child: ListView.separated(
                             itemCount: _items.length,
                             separatorBuilder: (_, __) => const Divider(
-                              height: 1,
-                              thickness: 0.5,
+                              height: 1.5,
+                              thickness: .5,
                               color: Colors.grey,
                             ),
                             itemBuilder: (context, index) {
@@ -280,24 +292,12 @@ class _WalletCreatorState extends State<WalletCreator> {
                                 currency: currency,
                                 showDate: true,
                                 isEditing: _editingIndex == index,
+                                isIncome: _isIncome,
                                 onEdit: () {
                                   _editingIndex = index;
                                   _prefillForEdit(item);
                                 },
-                                onDelete: () {
-                                  setState(() {
-                                    _items.removeAt(index);
-                                    if (_editingIndex != null) {
-                                      if (_editingIndex == index) {
-                                        _editingIndex = null;
-                                        _itemNameController.clear();
-                                        _itemValueController.clear();
-                                      } else if (_editingIndex! > index) {
-                                        _editingIndex = _editingIndex! - 1;
-                                      }
-                                    }
-                                  });
-                                },
+                                onDelete: () => _removeItem(index),
                               );
                             },
                           ),
@@ -318,7 +318,7 @@ class _WalletCreatorState extends State<WalletCreator> {
                 onTap: (index) {
                   switch (index) {
                     case 0:
-                      _saveWallet();
+                      _saveCash();
                       break;
                     case 1:
                       break;

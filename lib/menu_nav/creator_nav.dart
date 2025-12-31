@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/nav_model/creator_nav_item.dart';
+
 class CreatorNav extends StatelessWidget {
   const CreatorNav({
     required this.items,
@@ -94,11 +96,4 @@ class CreatorNav extends StatelessWidget {
       ),
     );
   }
-}
-
-class CreatorNavItem {
-  const CreatorNavItem({required this.title, required this.icon});
-
-  final String title;
-  final IconData icon;
 }
