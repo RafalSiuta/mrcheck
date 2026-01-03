@@ -4,6 +4,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:mrcash/screens/mainscreen.dart';
 import 'package:mrcash/screens/settingsscreen.dart';
 import 'package:mrcash/utils/routes/custom_route.dart';
@@ -14,6 +16,8 @@ import 'providers/walletprovider.dart';
 
 Future<void> main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  Intl.defaultLocale = 'pl_PL';
+  await initializeDateFormatting('pl_PL', null);
 
   Future<int> getAndroidVersion() async {
     if (Platform.isAndroid) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrcash/utils/extensions/string_extension.dart';
 import 'package:provider/provider.dart';
 
 import '../models/cash_model/cash.dart';
@@ -55,7 +56,7 @@ class _CashCreatorState extends State<CashCreator> {
   double get _itemsTotal =>
       _items.fold<double>(0, (sum, item) => sum + item.value);
 
-  void _saveCash() {
+  Future<void> _saveCash() async {
     final provider = context.read<CashProvider>();
     final nextId = provider.cashList.isEmpty
         ? 1
@@ -71,9 +72,9 @@ class _CashCreatorState extends State<CashCreator> {
       currency: widget.cash.currency,
     );
     if (provider.cashList.any((c) => c.id == cashId)) {
-      provider.updateCash(updatedCash);
+      await provider.updateCash(updatedCash);
     } else {
-      provider.addCash(updatedCash);
+      await provider.addCash(updatedCash);
     }
     Navigator.pop(context);
   }
@@ -167,7 +168,7 @@ class _CashCreatorState extends State<CashCreator> {
 
     if (shouldDelete == true) {
       if (widget.cash.id > 0) {
-        context.read<CashProvider>().removeCash(widget.cash.id);
+        await context.read<CashProvider>().removeCash(widget.cash.id);
       }
       if (mounted) {
         Navigator.pop(context);

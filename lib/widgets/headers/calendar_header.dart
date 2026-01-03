@@ -10,6 +10,7 @@ class CalendarHeader extends StatelessWidget {
     required this.date,
     this.widget,
     this.padding = EdgeInsets.zero,
+    this.locale,
     super.key,
   });
 
@@ -18,11 +19,12 @@ class CalendarHeader extends StatelessWidget {
   final DateTime date;
   final Widget? widget;
   final EdgeInsets padding;
+  final String? locale;
 
   @override
   Widget build(BuildContext context) {
     final textSize = Theme.of(context).textTheme.headlineMedium?.fontSize ?? 18;
-    final formatted = DateFormat('MMM yy').format(date);
+    final formatted = DateFormat('MMM yy', locale).format(date);
     final titleStyle = Theme.of(context)
         .textTheme
         .headlineMedium

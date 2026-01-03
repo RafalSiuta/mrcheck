@@ -65,24 +65,29 @@ class CashCard extends StatelessWidget {
             Visibility(
                 visible: !showDate,
                 child: _DirectionIcon(isIncome: isIncome, color: effectiveColor)),
-            RichText(
-              text: TextSpan(
-                style: baseTitleStyle?.copyWith(
-                  color: isEditing ? Colors.grey : baseTitleStyle.color,
+            Expanded(
+              child: RichText(
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                text: TextSpan(
+
+                  style: baseTitleStyle?.copyWith(
+                    color: isEditing ? Colors.grey : baseTitleStyle.color,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: value.toStringAsFixed(2),
+                      style: baseTitleStyle?.copyWith(color: effectiveColor),
+                    ),
+                    const TextSpan(text: ' '),
+                    TextSpan(
+                      text: currency,
+                      style: baseTitleStyle?.copyWith(color: effectiveColor),
+                    ),
+                    const TextSpan(text: '  '),
+                    TextSpan(text: name),
+                  ],
                 ),
-                children: [
-                  TextSpan(
-                    text: value.toStringAsFixed(2),
-                    style: baseTitleStyle?.copyWith(color: effectiveColor),
-                  ),
-                  const TextSpan(text: ' '),
-                  TextSpan(
-                    text: currency,
-                    style: baseTitleStyle?.copyWith(color: effectiveColor),
-                  ),
-                  const TextSpan(text: '  '),
-                  TextSpan(text: name),
-                ],
               ),
             ),
           ],
