@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/cash_model/cash.dart';
 import '../models/value_model/value_item.dart';
 import '../models/wallet_model/wallet.dart';
+import '../utils/id_generator/id_generator.dart';
 
 List<Cash> sampleCashData() {
   final today = DateTime.now();
@@ -10,13 +11,13 @@ List<Cash> sampleCashData() {
 
   return [
     Cash(
-      id: 101,
+      id: makeId(),
       name: 'poranna kawa',
       value: 18.50,
       date: normalizedToday,
       itemsList: [
         ValueItem(
-          id: 101,
+          id: makeId(),
           name: 'flat white',
           value: 18.50,
           date: normalizedToday,
@@ -25,20 +26,20 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 102,
+      id: makeId(),
       name: 'zakupy spożywcze',
       value: 62.30,
       date: normalizedToday,
       itemsList: [
         ValueItem(
-          id: 102,
+          id: makeId(),
           name: 'owoce i pieczywo',
           value: 32.30,
           date: normalizedToday,
           category: 'spożywcze',
         ),
         ValueItem(
-          id: 103,
+          id: makeId(),
           name: 'nabiał',
           value: 30.00,
           date: normalizedToday,
@@ -47,14 +48,14 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 103,
+      id: makeId(),
       name: 'premia roczna',
       value: 1500.00,
       date: normalizedToday,
       isIncome: true,
       itemsList: [
         ValueItem(
-          id: 104,
+          id: makeId(),
           name: 'premia uznaniowa',
           value: 1500.00,
           date: normalizedToday,
@@ -63,20 +64,20 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 1,
+      id: makeId(),
       name: 'zakupy market',
       value: 36.50,
       date: DateTime(2025, 12, 12),
       itemsList: [
         ValueItem(
-          id: 1,
+          id: makeId(),
           name: 'pieczywo',
           value: 12.5,
           date: DateTime(2025, 12, 12),
           category: 'spożywcze',
         ),
         ValueItem(
-          id: 2,
+          id: makeId(),
           name: 'warzywa',
           value: 24.0,
           date: DateTime(2025, 12, 12),
@@ -85,14 +86,14 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 2,
+      id: makeId(),
       name: 'pensja',
       value: 5200.00,
       date: DateTime(2025, 12, 10),
       isIncome: true,
       itemsList: [
         ValueItem(
-          id: 3,
+          id: makeId(),
           name: 'wypłata netto',
           value: 5200.00,
           date: DateTime(2025, 12, 10),
@@ -101,20 +102,20 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 3,
+      id: makeId(),
       name: 'kino z rodziną',
       value: 1120.75,
       date: DateTime(2025, 12, 5),
       itemsList: [
         ValueItem(
-          id: 4,
+          id: makeId(),
           name: 'bilety',
           value: 120.75,
           date: DateTime(2025, 12, 5),
           category: 'rozrywka',
         ),
         ValueItem(
-          id: 5,
+          id: makeId(),
           name: 'popcorn',
           value: 60.0,
           date: DateTime(2025, 12, 5),
@@ -123,14 +124,14 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 4,
+      id: makeId(),
       name: 'zwrot podatku',
       value: 1250.00,
       date: DateTime(2025, 7, 30),
       isIncome: true,
       itemsList: [
         ValueItem(
-          id: 6,
+          id: makeId(),
           name: 'rozliczenie PIT',
           value: 1250.00,
           date: DateTime(2025, 12, 30),
@@ -139,14 +140,14 @@ List<Cash> sampleCashData() {
       ],
     ),
     Cash(
-      id: 5,
+      id: makeId(),
       name: 'mandat',
       value: 100,
       date: DateTime(2025, 7, 30),
       isIncome: false,
       itemsList: [
         ValueItem(
-          id: 7,
+          id: makeId(),
           name: 'mandat za prędkość',
           value: 100.00,
           date: DateTime(2025, 12, 30),
@@ -160,21 +161,21 @@ List<Cash> sampleCashData() {
 List<Wallet> sampleWalletData() {
   return [
     Wallet(
-      id: 1,
+      id: makeId(),
       title: 'świnka',
       value: 123.45,
       icon: Icons.account_balance_wallet.codePoint,
       date: DateTime(2024, 1, 15),
       itemsList: [
         ValueItem(
-          id: 1,
+          id: makeId(),
           name: 'kieszonkowe',
           value: 10,
           date: DateTime(2024, 1, 15),
           category: 'kieszonkowe',
         ),
         ValueItem(
-          id: 2,
+          id: makeId(),
           name: 'usługa',
           value: 20,
           date: DateTime(2024, 2, 2),
@@ -183,21 +184,21 @@ List<Wallet> sampleWalletData() {
       ],
     ),
     Wallet(
-      id: 2,
+      id: makeId(),
       title: 'akcje',
       value: 4567.89,
       icon: Icons.trending_up.codePoint,
       date: DateTime(2024, 2, 2),
       itemsList: [
         ValueItem(
-          id: 3,
+          id: makeId(),
           name: 'kryptowaluty',
           value: 200,
           date: DateTime(2023, 11, 20),
           category: 'krypto',
         ),
         ValueItem(
-          id: 4,
+          id: makeId(),
           name: 'ETF',
           value: 400,
           date: DateTime(2024, 3, 3),
@@ -206,21 +207,21 @@ List<Wallet> sampleWalletData() {
       ],
     ),
     Wallet(
-      id: 3,
+      id: makeId(),
       title: 'bank',
       value: 321.00,
       icon: Icons.account_balance.codePoint,
       date: DateTime(2024, 4, 28),
       itemsList: [
         ValueItem(
-          id: 5,
+          id: makeId(),
           name: 'rachunek bieżący',
           value: 120,
           date: DateTime(2024, 4, 28),
           category: 'rachunek',
         ),
         ValueItem(
-          id: 6,
+          id: makeId(),
           name: 'oszczędności',
           value: 201,
           date: DateTime(2024, 5, 12),
@@ -229,21 +230,21 @@ List<Wallet> sampleWalletData() {
       ],
     ),
     Wallet(
-      id: 4,
+      id: makeId(),
       title: 'waluty',
       value: 987.65,
       icon: Icons.attach_money.codePoint,
       date: DateTime(2024, 6, 8),
       itemsList: [
         ValueItem(
-          id: 7,
+          id: makeId(),
           name: 'USD',
           value: 400,
           date: DateTime(2024, 6, 8),
           category: 'waluty',
         ),
         ValueItem(
-          id: 8,
+          id: makeId(),
           name: 'EUR',
           value: 587.65,
           date: DateTime(2024, 7, 1),

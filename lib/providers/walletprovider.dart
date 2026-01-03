@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../database/database_helper.dart';
 import '../models/wallet_model/wallet.dart';
+import '../utils/id_generator/id_generator.dart';
 import 'settingsprovider.dart';
 
 class WalletProvider extends ChangeNotifier {
@@ -31,13 +32,11 @@ class WalletProvider extends ChangeNotifier {
   }
 
   Wallet createEmptyWallet() {
-    final nextId = _wallets.isEmpty
-        ? 1
-        : _wallets.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
+    final newId = makeId();
     final currency = _wallets.isNotEmpty ? _wallets.first.currency : 'zł';
 
     return Wallet(
-      id: nextId,
+      id: newId,
       title: 'nowy portfel',
       value: 0,
       icon: Icons.account_balance_wallet.codePoint,
@@ -62,7 +61,7 @@ class WalletProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> removeWallet(int id) async {
+  Future<void> removeWallet(String id) async {
     if (!_initialized) await init();
     await _databaseHelper.deleteWallet(id);
     _wallets = _databaseHelper.getAllWallets();

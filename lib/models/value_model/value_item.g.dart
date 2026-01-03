@@ -17,7 +17,7 @@ class ValueItemAdapter extends TypeAdapter<ValueItem> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ValueItem(
-      id: fields[0] as int,
+      id: fields[0] as String,
       date: fields[1] as DateTime,
       name: fields[2] as String,
       value: fields[3] as double,

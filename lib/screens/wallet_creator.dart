@@ -7,6 +7,7 @@ import '../models/color_model/color_option.dart';
 import '../models/icon_model/icon_option.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../providers/walletprovider.dart';
+import '../utils/id_generator/id_generator.dart';
 import '../widgets/cards/cash_card.dart';
 import '../widgets/dialogs/color_dialog.dart';
 import '../widgets/dialogs/icon_dialog.dart';
@@ -74,10 +75,8 @@ class _WalletCreatorState extends State<WalletCreator> {
 
   void _saveWallet() {
     final provider = context.read<WalletProvider>();
-    final nextId = provider.wallets.isEmpty
-        ? 1
-        : provider.wallets.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
-    final walletId = widget.wallet.id > 0 ? widget.wallet.id : nextId;
+    final walletId =
+        widget.wallet.id.isNotEmpty ? widget.wallet.id : makeId();
     final updatedWallet = Wallet(
       id: walletId,
       title: _titleController.text.trim(),
@@ -132,13 +131,10 @@ class _WalletCreatorState extends State<WalletCreator> {
           date: existing.date,
         );
       } else {
-        final nextId = _items.isEmpty
-            ? 1
-            : _items.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
         final now = DateTime.now();
         _items.add(
           ValueItem(
-            id: nextId,
+            id: makeId(),
             name: result.name,
             value: result.value,
             date: now,
@@ -224,7 +220,7 @@ class _WalletCreatorState extends State<WalletCreator> {
     );
 
     if (shouldDelete == true) {
-      if (widget.wallet.id > 0) {
+      if (widget.wallet.id.isNotEmpty) {
         context.read<WalletProvider>().removeWallet(widget.wallet.id);
       }
       if (mounted) {

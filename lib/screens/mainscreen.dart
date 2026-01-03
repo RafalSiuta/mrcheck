@@ -11,6 +11,7 @@ import 'calendarscreen.dart';
 import 'cash_creator.dart';
 import '../models/cash_model/cash.dart';
 import '../models/value_model/value_item.dart';
+import '../utils/id_generator/id_generator.dart';
 
 class Main extends StatefulWidget {
   const Main({super.key});
@@ -78,7 +79,7 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final placeholderCash = Cash(
-      id: -1,
+      id: makeId(),
       name: '',
       value: 0,
       date: DateTime.now(),

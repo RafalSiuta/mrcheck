@@ -7,6 +7,7 @@ import '../models/cash_model/cash.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../models/value_model/value_item.dart';
 import '../providers/cashprovider.dart';
+import '../utils/id_generator/id_generator.dart';
 import '../widgets/cards/cash_card.dart';
 import '../widgets/dialogs/inutdialog.dart';
 import '../widgets/menu_nav/creator_nav.dart';
@@ -58,10 +59,8 @@ class _CashCreatorState extends State<CashCreator> {
 
   Future<void> _saveCash() async {
     final provider = context.read<CashProvider>();
-    final nextId = provider.cashList.isEmpty
-        ? 1
-        : provider.cashList.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
-    final cashId = widget.cash.id > 0 ? widget.cash.id : nextId;
+    final cashId =
+        widget.cash.id.isNotEmpty ? widget.cash.id : makeId();
     final updatedCash = Cash(
       id: cashId,
       name: _titleController.text.trim(),
@@ -128,13 +127,10 @@ class _CashCreatorState extends State<CashCreator> {
           date: existing.date,
         );
       } else {
-        final nextId = _items.isEmpty
-            ? 1
-            : _items.map((e) => e.id).reduce((a, b) => a > b ? a : b) + 1;
         final now = DateTime.now();
         _items.add(
           ValueItem(
-            id: nextId,
+            id: makeId(),
             name: result.name,
             value: result.value,
             date: now,
@@ -167,7 +163,7 @@ class _CashCreatorState extends State<CashCreator> {
     );
 
     if (shouldDelete == true) {
-      if (widget.cash.id > 0) {
+      if (widget.cash.id.isNotEmpty) {
         await context.read<CashProvider>().removeCash(widget.cash.id);
       }
       if (mounted) {
@@ -182,6 +178,7 @@ class _CashCreatorState extends State<CashCreator> {
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      locale: const Locale('pl', 'PL'),
     );
     if (picked != null) {
       setState(() {

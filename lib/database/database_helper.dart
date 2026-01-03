@@ -50,7 +50,7 @@ class DatabaseHelper {
     await _cashBox?.put(cash.id, cash);
   }
 
-  Future<void> deleteCash(int id) async {
+  Future<void> deleteCash(String id) async {
     await _cashBox?.delete(id);
   }
 
@@ -64,7 +64,7 @@ class DatabaseHelper {
     await _walletBox?.put(wallet.id, wallet);
   }
 
-  Future<void> deleteWallet(int id) async {
+  Future<void> deleteWallet(String id) async {
     await _walletBox?.delete(id);
   }
 

@@ -55,7 +55,7 @@ class CashProvider extends ChangeNotifier {
   Future<void> init() async {
     await _databaseHelper.initializeHive();
     _cashList = _databaseHelper.getAllCash();
-    // _cashList = sampleCashData(); // utils/test_data.dart - uncomment to preload fixtures.
+     //_cashList = sampleCashData(); // utils/test_data.dart - uncomment to preload fixtures.
     _initialized = true;
     notifyListeners();
   }
@@ -167,7 +167,7 @@ class CashProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> removeCash(int id) async {
+  Future<void> removeCash(String id) async {
     if (!_initialized) await init();
     await _databaseHelper.deleteCash(id);
     _cashList = _databaseHelper.getAllCash();

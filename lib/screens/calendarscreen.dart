@@ -4,11 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../models/cash_model/cash.dart';
+import '../models/value_model/value_item.dart';
 import '../providers/cashprovider.dart';
+import '../utils/id_generator/id_generator.dart';
 import '../utils/routes/custom_route.dart';
 import '../widgets/calendar/marker/calendar_marker.dart';
 import '../widgets/calendar/list/calendar_list.dart';
 import '../widgets/headers/calendar_header.dart';
+import '../widgets/buttons/calendar_format_button.dart';
 import 'cash_creator.dart';
 
 class CalendarScreen extends StatelessWidget {
@@ -33,28 +36,11 @@ class CalendarScreen extends StatelessWidget {
                   locale: 'pl_PL',
                   previous: cashProvider.goToPreviousCalendarPage,
                   next: cashProvider.goToNextCalendarPage,
-                  widget: DropdownButton<CalendarFormat>(
-                    value: cashProvider.calendarFormat,
-                    underline: const SizedBox.shrink(),
-                    items: const [
-                      DropdownMenuItem(
-                        value: CalendarFormat.month,
-                        child: Text('mies'),
-                      ),
-                      DropdownMenuItem(
-                        value: CalendarFormat.twoWeeks,
-                        child: Text('2 tyg.'),
-                      ),
-                      DropdownMenuItem(
-                        value: CalendarFormat.week,
-                        child: Text('tydz'),
-                      ),
-                    ],
-                    onChanged: (format) {
-                      if (format != null) {
-                        cashProvider.changeCalendarFormat(format);
-                      }
-                    },
+                  widget: CalendarFormatButton(
+                    format: cashProvider.calendarFormat,
+                    onFormatChange: cashProvider.changeCalendarFormat,
+                    textSize:
+                        Theme.of(context).textTheme.bodyMedium?.fontSize,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -68,9 +54,36 @@ class CalendarScreen extends StatelessWidget {
                   onFormatChanged: cashProvider.changeCalendarFormat,
                   onPageChanged: cashProvider.updateFocusedDay,
                   onCalendarCreated: cashProvider.setCalendarPageController,
+                  startingDayOfWeek: StartingDayOfWeek.monday,
                   selectedDayPredicate: (day) =>
                       isSameDay(cashProvider.selectedDay, day),
                   onDaySelected: cashProvider.selectDay,
+                  onDayLongPressed: (selectedDay, focusedDay) async {
+                    cashProvider.selectDay(selectedDay, focusedDay);
+                    final currency = cashProvider.cashList.isNotEmpty
+                        ? cashProvider.cashList.first.currency
+                        : 'zł';
+                    final newCash = Cash(
+                      id: makeId(),
+                      date: DateTime(
+                        selectedDay.year,
+                        selectedDay.month,
+                        selectedDay.day,
+                      ),
+                      name: '',
+                      value: 0,
+                      currency: currency,
+                      isIncome: false,
+                      itemsList: const <ValueItem>[],
+                    );
+                    await Navigator.push(
+                      context,
+                      CustomPageRoute(
+                        child: CashCreator(cash: newCash),
+                        direction: AxisDirection.up,
+                      ),
+                    );
+                  },
                   eventLoader: cashProvider.cashForDay,
                   headerVisible: false,
                   daysOfWeekVisible: true,

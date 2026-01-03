@@ -13,7 +13,7 @@ class ValueItem {
   });
 
   @HiveField(0)
-  final int id;
+  final String id;
 
   @HiveField(1)
   final DateTime date;
