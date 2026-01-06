@@ -4,6 +4,7 @@ import 'package:mrcash/models/value_model/value_item.dart';
 import 'package:provider/provider.dart';
 
 import '../models/color_model/color_option.dart';
+import '../models/currency_model/currency.dart';
 import '../models/icon_model/icon_option.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../providers/walletprovider.dart';
@@ -33,16 +34,27 @@ class _WalletCreatorState extends State<WalletCreator> {
   final FocusNode _titleFocus = FocusNode();
   late List<ValueItem> _items;
   int? _editingIndex;
+  late String _selectedCurrency;
   late DateTime _walletDate;
   late int _selectedColorValue;
   late int _selectedIconCode;
   Color get _selectedColor => Color(_selectedColorValue);
+  static const List<CurrencyOption> _currencyOptions = [
+    CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
+    CurrencyOption(symbol: 'CHF', short: 'chf', valueToPln: 4.65),
+    CurrencyOption(symbol: 'USD', short: 'usd', valueToPln: 3.9),
+    CurrencyOption(symbol: 'EUR', short: 'eur', valueToPln: 4.2),
+    CurrencyOption(symbol: 'GBP', short: 'gbp', valueToPln: 5.0),
+    CurrencyOption(symbol: '1oz GOLD', short: 'uncja', valueToPln: 15000),
+    CurrencyOption(symbol: '1oz SILVER', short: 'uncja', valueToPln: 322),
+  ];
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.wallet.title);
     _items = List.of(widget.wallet.itemsList);
+    _selectedCurrency = widget.wallet.currency;
     _walletDate = widget.wallet.date;
     _selectedColorValue =
         widget.wallet.color == 0 ? Colors.white.value : widget.wallet.color;
@@ -82,7 +94,7 @@ class _WalletCreatorState extends State<WalletCreator> {
       title: _titleController.text.trim(),
       value: _itemsTotal,
       icon: _selectedIconCode,
-      currency: widget.wallet.currency,
+      currency: _selectedCurrency,
       color: _selectedColorValue,
       date: _walletDate,
       itemsList: _items,
@@ -106,9 +118,11 @@ class _WalletCreatorState extends State<WalletCreator> {
       context: context,
       builder: (_) => InutDialog(
         title: isEdit ? 'Edytuj pozycję' : 'Dodaj pozycję',
-        currency: widget.wallet.currency,
+        currency: _selectedCurrency,
         initialName: item?.name ?? '',
         initialValue: item != null ? item.value.toStringAsFixed(2) : '',
+        initialCategories: item?.categories ?? const [],
+        showCategories: false,
         confirmLabel: isEdit ? 'Zapisz' : 'Dodaj',
       ),
     );
@@ -129,6 +143,7 @@ class _WalletCreatorState extends State<WalletCreator> {
           name: result.name,
           value: result.value,
           date: existing.date,
+          categories: result.categories,
         );
       } else {
         final now = DateTime.now();
@@ -138,6 +153,7 @@ class _WalletCreatorState extends State<WalletCreator> {
             name: result.name,
             value: result.value,
             date: now,
+            categories: result.categories,
           ),
         );
       }
@@ -198,6 +214,46 @@ class _WalletCreatorState extends State<WalletCreator> {
     }
   }
 
+  Future<void> _pickCurrency() async {
+    final selected = await showDialog<CurrencyOption>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Wybierz walutę'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _currencyOptions
+              .map(
+                (option) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor:
+                          _selectedCurrency == option.short ? Colors.grey.shade200 : null,
+                      foregroundColor: Colors.black87,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(option),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(option.symbol),
+                        Text(option.short),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedCurrency = selected.short;
+      });
+    }
+  }
+
   Future<void> _confirmDeleteCash() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -233,10 +289,11 @@ class _WalletCreatorState extends State<WalletCreator> {
   Widget build(BuildContext context) {
     final iconData =
         IconData(_selectedIconCode, fontFamily: 'MaterialIcons');
-    final currency = widget.wallet.currency;
+    final currency = _selectedCurrency;
     const horizontalPadding = EdgeInsets.symmetric(horizontal: 16);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: _selectedColor,
       body: SafeArea(
         child: GestureDetector(
@@ -376,7 +433,7 @@ class _WalletCreatorState extends State<WalletCreator> {
                       _showItemDialog();
                       break;
                     case 2:
-                      //pick currency
+                      _pickCurrency();
                       break;
                     case 3:
                       _pickIcon();

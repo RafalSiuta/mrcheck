@@ -16,12 +16,21 @@ class ValueItemAdapter extends TypeAdapter<ValueItem> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
+    final rawCategory = fields[4];
+    List<String> categories;
+    if (rawCategory is String) {
+      categories = rawCategory.isEmpty ? <String>[] : <String>[rawCategory];
+    } else if (rawCategory is Iterable) {
+      categories = List<String>.from(rawCategory.whereType<String>());
+    } else {
+      categories = <String>[];
+    }
     return ValueItem(
       id: fields[0] as String,
       date: fields[1] as DateTime,
       name: fields[2] as String,
       value: fields[3] as double,
-      category: fields[4] as String,
+      categories: categories,
     );
   }
 
@@ -38,7 +47,7 @@ class ValueItemAdapter extends TypeAdapter<ValueItem> {
       ..writeByte(3)
       ..write(obj.value)
       ..writeByte(4)
-      ..write(obj.category);
+      ..write(obj.categories);
   }
 
   @override

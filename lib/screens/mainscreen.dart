@@ -41,16 +41,16 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
       ),
     ),
     ScreenModel(
-        page: const WalletScreen(),
-        title: NavModel(
-          title: 'portfele',
-        )),
-    ScreenModel(
       page: const CalendarScreen(),
       title: NavModel(
         title: 'kalendarz',
       ),
     ),
+    ScreenModel(
+        page: const WalletScreen(),
+        title: NavModel(
+          title: 'portfele',
+        )),
     ScreenModel(
         page: const SummaryScreen(),
         title: NavModel(

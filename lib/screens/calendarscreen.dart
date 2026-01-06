@@ -26,236 +26,259 @@ class CalendarScreen extends StatelessWidget {
           ..sort((a, b) => b.date.compareTo(a.date));
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CalendarHeader(
-                  date: cashProvider.focusedDay,
-                  locale: 'pl_PL',
-                  previous: cashProvider.goToPreviousCalendarPage,
-                  next: cashProvider.goToNextCalendarPage,
-                  widget: CalendarFormatButton(
-                    format: cashProvider.calendarFormat,
-                    onFormatChange: cashProvider.changeCalendarFormat,
-                    textSize:
-                        Theme.of(context).textTheme.bodyMedium?.fontSize,
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(8.0),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate.fixed(
+                    [
+                      CalendarHeader(
+                        date: cashProvider.focusedDay,
+                        locale: 'pl_PL',
+                        previous: cashProvider.goToPreviousCalendarPage,
+                        next: cashProvider.goToNextCalendarPage,
+                        widget: CalendarFormatButton(
+                          format: cashProvider.calendarFormat,
+                          onFormatChange: cashProvider.changeCalendarFormat,
+                          textSize:
+                              Theme.of(context).textTheme.bodyMedium?.fontSize,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                TableCalendar<Cash>(
-                  locale: 'pl_PL',
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2100, 12, 31),
-                  focusedDay: cashProvider.focusedDay,
-                  availableGestures: AvailableGestures.all,
-                  calendarFormat: cashProvider.calendarFormat,
-                  onFormatChanged: cashProvider.changeCalendarFormat,
-                  onPageChanged: cashProvider.updateFocusedDay,
-                  onCalendarCreated: cashProvider.setCalendarPageController,
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  selectedDayPredicate: (day) =>
-                      isSameDay(cashProvider.selectedDay, day),
-                  onDaySelected: cashProvider.selectDay,
-                  onDayLongPressed: (selectedDay, focusedDay) async {
-                    cashProvider.selectDay(selectedDay, focusedDay);
-                    final currency = cashProvider.cashList.isNotEmpty
-                        ? cashProvider.cashList.first.currency
-                        : 'zł';
-                    final newCash = Cash(
-                      id: makeId(),
-                      date: DateTime(
-                        selectedDay.year,
-                        selectedDay.month,
-                        selectedDay.day,
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                sliver: SliverToBoxAdapter(
+                  child: TableCalendar<Cash>(
+                    locale: 'pl_PL',
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2100, 12, 31),
+                    focusedDay: cashProvider.focusedDay,
+                    availableGestures: AvailableGestures.all,
+                    calendarFormat: cashProvider.calendarFormat,
+                    onFormatChanged: cashProvider.changeCalendarFormat,
+                    onPageChanged: cashProvider.updateFocusedDay,
+                    onCalendarCreated: cashProvider.setCalendarPageController,
+                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    selectedDayPredicate: (day) =>
+                        isSameDay(cashProvider.selectedDay, day),
+                    onDaySelected: cashProvider.selectDay,
+                    onDayLongPressed: (selectedDay, focusedDay) async {
+                      cashProvider.selectDay(selectedDay, focusedDay);
+                      final currency = cashProvider.cashList.isNotEmpty
+                          ? cashProvider.cashList.first.currency
+                          : 'zł';
+                      final newCash = Cash(
+                        id: makeId(),
+                        date: DateTime(
+                          selectedDay.year,
+                          selectedDay.month,
+                          selectedDay.day,
+                        ),
+                        name: '',
+                        value: 0,
+                        currency: currency,
+                        isIncome: false,
+                        itemsList: const <ValueItem>[],
+                      );
+                      await Navigator.push(
+                        context,
+                        CustomPageRoute(
+                          child: CashCreator(cash: newCash),
+                          direction: AxisDirection.up,
+                        ),
+                      );
+                    },
+                    eventLoader: cashProvider.cashForDay,
+                    headerVisible: false,
+                    daysOfWeekVisible: true,
+                    rowHeight: 64,
+                    calendarStyle: CalendarStyle(
+                      cellMargin: EdgeInsets.zero,
+                      cellPadding: const EdgeInsets.symmetric(
+                        horizontal: 2,
+                        vertical: 4,
                       ),
-                      name: '',
-                      value: 0,
-                      currency: currency,
-                      isIncome: false,
-                      itemsList: const <ValueItem>[],
-                    );
-                    await Navigator.push(
-                      context,
-                      CustomPageRoute(
-                        child: CashCreator(cash: newCash),
-                        direction: AxisDirection.up,
-                      ),
-                    );
-                  },
-                  eventLoader: cashProvider.cashForDay,
-                  headerVisible: false,
-                  daysOfWeekVisible: true,
-                  rowHeight: 64,
-                  calendarStyle: CalendarStyle(
-                    cellMargin: EdgeInsets.zero,
-                    cellPadding: const EdgeInsets.symmetric(
-                      horizontal: 2,
-                      vertical: 4,
-                    ),
-                    isTodayHighlighted: true,
-                    todayDecoration: BoxDecoration(
-                      color: ink,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
+                      isTodayHighlighted: true,
+                      todayDecoration: BoxDecoration(
                         color: ink,
-                        width: 0.3,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: ink,
+                          width: 0.3,
+                        ),
                       ),
+                      selectedDecoration: BoxDecoration(
+                        color: ink.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      markersAlignment: Alignment.bottomCenter,
+                      markersMaxCount: 3,
+                      markersAnchor: 1,
                     ),
-                    selectedDecoration: BoxDecoration(
-                      color: ink.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(6),
+                    calendarBuilders: CalendarBuilders<Cash>(
+                      defaultBuilder: (context, day, _) => Center(
+                        child: Text(
+                          '${day.day}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      outsideBuilder: (context, day, _) => Center(
+                        child: Text(
+                          '${day.day}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: Colors.grey),
+                        ),
+                      ),
+                      dowBuilder: (context, day) => Center(
+                        child: Text(
+                          DateFormat.E('pl_PL').format(day),
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ),
+                      markerBuilder: (context, day, events) {
+                        final markerValues = cashProvider.markerValues(events);
+                        if (markerValues.isEmpty) return const SizedBox.shrink();
+
+                        final markers = markerValues
+                            .map(
+                              (marker) => CalendarMarker(
+                                label:
+                                    '${marker.isIncome ? '+' : '-'}${marker.amount.toStringAsFixed(2)} ${marker.currency}',
+                                backgroundColor: marker.isIncome
+                                    ? Colors.green.shade600
+                                    : Colors.red.shade600,
+                                textColor: marker.isIncome
+                                    ? Theme.of(context)
+                                            .textTheme
+                                            .labelMedium
+                                            ?.color ??
+                                        Colors.white
+                                    : Colors.white,
+                              ),
+                            )
+                            .toList();
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: markers,
+                        );
+                      },
                     ),
-                    markersAlignment: Alignment.bottomCenter,
-                    markersMaxCount: 3,
-                    markersAnchor: 1,
                   ),
-                  calendarBuilders: CalendarBuilders<Cash>(
-                    defaultBuilder: (context, day, _) => Center(
-                      child: Text(
-                        '${day.day}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                    outsideBuilder: (context, day, _) => Center(
-                      child: Text(
-                        '${day.day}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelMedium
-                            ?.copyWith(color: Colors.grey),
-                      ),
-                    ),
-                    dowBuilder: (context, day) => Center(
-                      child: Text(
-                        DateFormat.E('pl_PL').format(day),
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ),
-                    markerBuilder: (context, day, events) {
-                      final markerValues = cashProvider.markerValues(events);
-                      if (markerValues.isEmpty) return const SizedBox.shrink();
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+                sliver: SliverToBoxAdapter(
+                  child: Builder(
+                    builder: (context) {
+                      final focusedMonth = cashProvider.focusedDay;
+                      final monthlyCash = cashProvider.cashList.where(
+                        (cash) =>
+                            cash.date.year == focusedMonth.year &&
+                            cash.date.month == focusedMonth.month,
+                      );
 
-                      final markers = markerValues
-                          .map(
-                            (marker) => CalendarMarker(
-                              label:
-                                  '${marker.isIncome ? '+' : '-'}${marker.amount.toStringAsFixed(2)} ${marker.currency}',
-                              backgroundColor: marker.isIncome
-                                  ? Colors.green.shade600
-                                  : Colors.red.shade600,
-                              textColor: marker.isIncome
-                                  ? Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.color ??
-                                      Colors.white
-                                  : Colors.white,
+                      double totalIncome = 0;
+                      double totalExpense = 0;
+                      String currency = 'zł';
+
+                      for (final cash in monthlyCash) {
+                        final total = cashProvider.sumItems(cash);
+                        currency = cash.currency;
+                        if (cash.isIncome) {
+                          totalIncome += total;
+                        } else {
+                          totalExpense += total;
+                        }
+                      }
+
+                      final difference = totalIncome - totalExpense;
+                      final monthLabel = DateFormat('LLLL yyyy', 'pl_PL')
+                          .format(focusedMonth);
+
+                      Widget summaryRow({
+                        required String label,
+                        required double amount,
+                        required Color color,
+                      }) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              label,
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
-                          )
-                          .toList();
+                            Text(
+                              '${amount.toStringAsFixed(2)} $currency',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: color),
+                            ),
+                          ],
+                        );
+                      }
 
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: markers,
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Podsumowanie $monthLabel',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            summaryRow(
+                              label: 'Przychody',
+                              amount: totalIncome,
+                              color: Colors.green.shade700,
+                            ),
+                            const SizedBox(height: 6),
+                            summaryRow(
+                              label: 'Wydatki',
+                              amount: totalExpense,
+                              color: Colors.red.shade700,
+                            ),
+                            const SizedBox(height: 6),
+                            summaryRow(
+                              label: 'Zostało',
+                              amount: difference,
+                              color: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.color ??
+                                  Colors.black,
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
                 ),
-                const SizedBox(height: 12),
-                Builder(
-                  builder: (context) {
-                    final focusedMonth = cashProvider.focusedDay;
-                    final monthlyCash = cashProvider.cashList.where(
-                      (cash) =>
-                          cash.date.year == focusedMonth.year &&
-                          cash.date.month == focusedMonth.month,
-                    );
-
-                    double totalIncome = 0;
-                    double totalExpense = 0;
-                    String currency = 'zł';
-
-                    for (final cash in monthlyCash) {
-                      final total = cashProvider.sumItems(cash);
-                      currency = cash.currency;
-                      if (cash.isIncome) {
-                        totalIncome += total;
-                      } else {
-                        totalExpense += total;
-                      }
-                    }
-
-                    final difference = totalIncome - totalExpense;
-                    final monthLabel = DateFormat('LLLL yyyy', 'pl_PL')
-                        .format(focusedMonth);
-
-                    Widget summaryRow({
-                      required String label,
-                      required double amount,
-                      required Color color,
-                    }) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            label,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          Text(
-                            '${amount.toStringAsFixed(2)} $currency',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: color),
-                          ),
-                        ],
-                      );
-                    }
-
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Podsumowanie $monthLabel',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          summaryRow(
-                            label: 'Przychody',
-                            amount: totalIncome,
-                            color: Colors.green.shade700,
-                          ),
-                          const SizedBox(height: 6),
-                          summaryRow(
-                            label: 'Wydatki',
-                            amount: totalExpense,
-                            color: Colors.red.shade700,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Różnica: ${difference.toStringAsFixed(2)} $currency',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                Expanded(
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
+                sliver: SliverToBoxAdapter(
                   child: CalendarList(
                     cashList: selectedCash,
                     showDate: false,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     onEdit: (cash) async {
                       await Navigator.push(
                         context,
@@ -268,8 +291,8 @@ class CalendarScreen extends StatelessWidget {
                     onDelete: (_) {},
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

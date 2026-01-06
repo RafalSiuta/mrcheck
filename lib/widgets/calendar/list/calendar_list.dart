@@ -12,6 +12,8 @@ class CalendarList extends StatelessWidget {
     required this.onDelete,
     this.showDate = false,
     this.emptyText = 'Brak operacji w wybranym dniu',
+    this.shrinkWrap = false,
+    this.physics,
   });
 
   final List<Cash> cashList;
@@ -19,6 +21,8 @@ class CalendarList extends StatelessWidget {
   final void Function(Cash cash) onDelete;
   final bool showDate;
   final String emptyText;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
 
   double _sumItems(Cash cash) =>
       cash.itemsList.fold<double>(0, (sum, item) => sum + item.value);
@@ -31,6 +35,8 @@ class CalendarList extends StatelessWidget {
 
 
     return ListView.separated(
+      shrinkWrap: shrinkWrap,
+      physics: physics,
       itemCount: cashList.length,
       separatorBuilder: (_, __) => Divider(
         height: 0.5,

@@ -27,7 +27,7 @@ class CreatorNav extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? const Color(0xFF0F0F0F),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(15),
+          // topLeft: Radius.circular(15),
           bottomLeft: Radius.circular(15),
         ),
         boxShadow: [

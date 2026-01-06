@@ -9,7 +9,7 @@ class ValueItem {
     required this.date,
     required this.name,
     required this.value,
-    this.category = '',
+    this.categories = const [],
   });
 
   @HiveField(0)
@@ -25,5 +25,5 @@ class ValueItem {
   final double value;
 
   @HiveField(4)
-  final String category;
+  final List<String> categories;
 }

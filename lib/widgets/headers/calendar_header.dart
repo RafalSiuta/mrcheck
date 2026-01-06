@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mrcash/utils/extensions/string_extension.dart';
 
 import '../buttons/icon_btn.dart';
 
@@ -24,7 +25,7 @@ class CalendarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textSize = Theme.of(context).textTheme.headlineMedium?.fontSize ?? 18;
-    final formatted = DateFormat('MMM yy', locale).format(date);
+    final formatted = DateFormat('MMMM yy', locale).format(date);
     final titleStyle = Theme.of(context)
         .textTheme
         .headlineMedium
@@ -34,30 +35,42 @@ class CalendarHeader extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       padding: padding,
-      height: textSize * 2,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      margin: EdgeInsets.only(top: 12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          IconBtn(
-            icon: Icons.arrow_left,
-            onClick: previous,
+          widget != null ? widget! : Placeholder(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconBtn(
+                icon: Icons.arrow_left,
+                onClick: previous,
+              ),
+              Text(formatted.capitalizeFirstLetter(), style: titleStyle),
+
+              // widget != null
+              //     ? Row(
+              //         crossAxisAlignment: CrossAxisAlignment.center,
+              //         mainAxisAlignment: MainAxisAlignment.center,
+              //         children: [
+              //
+              //           const SizedBox(width: 12),
+              //           widget!,
+              //         ],
+              //       )
+              //     : Text(formatted, style: titleStyle),
+              IconBtn(
+                icon: Icons.arrow_right,
+                onClick: next,
+              ),
+
+            ],
+
           ),
-          widget != null
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(formatted, style: titleStyle),
-                    const SizedBox(width: 12),
-                    widget!,
-                  ],
-                )
-              : Text(formatted, style: titleStyle),
-          IconBtn(
-            icon: Icons.arrow_right,
-            onClick: next,
-          ),
+
         ],
       ),
     );

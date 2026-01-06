@@ -105,6 +105,7 @@ class _CashCreatorState extends State<CashCreator> {
         currency: widget.cash.currency,
         initialName: item?.name ?? '',
         initialValue: item != null ? item.value.toStringAsFixed(2) : '',
+        initialCategories: item?.categories ?? const [],
         confirmLabel: isEdit ? 'Zapisz' : 'Dodaj',
       ),
     );
@@ -125,6 +126,7 @@ class _CashCreatorState extends State<CashCreator> {
           name: result.name,
           value: result.value,
           date: existing.date,
+          categories: result.categories,
         );
       } else {
         final now = DateTime.now();
@@ -134,6 +136,7 @@ class _CashCreatorState extends State<CashCreator> {
             name: result.name,
             value: result.value,
             date: now,
+            categories: result.categories,
           ),
         );
       }
@@ -194,6 +197,7 @@ class _CashCreatorState extends State<CashCreator> {
     final formattedDate = DateFormat('dd MMM yyyy').format(_selectedDate);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -323,7 +327,7 @@ class _CashCreatorState extends State<CashCreator> {
                   CreatorNavItem(title: 'zapisz', icon: Icons.save),
                   CreatorNavItem(title: 'dodaj', icon: Icons.add),
                   CreatorNavItem(title: 'data', icon: Icons.calendar_month),
-                  CreatorNavItem(title: 'rachunek', icon: Icons.camera_alt),
+                  // CreatorNavItem(title: 'rachunek', icon: Icons.camera_alt),
                   CreatorNavItem(title: 'usuń', icon: Icons.delete),
                   CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
                 ],
@@ -342,11 +346,9 @@ class _CashCreatorState extends State<CashCreator> {
                       break;
                     case 3:
                       // rachunek placeholder
-                      break;
-                    case 4:
                       _confirmDeleteCash();
                       break;
-                    case 5:
+                    case 4:
                       Navigator.pop(context);
                       break;
                   }

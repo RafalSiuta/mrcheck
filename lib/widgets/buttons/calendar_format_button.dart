@@ -27,13 +27,13 @@ class CalendarFormatButton extends StatelessWidget {
     String label;
     switch (format) {
       case CalendarFormat.week:
-        label = 'tydz';
+        label = 'tydzień';
         break;
       case CalendarFormat.twoWeeks:
-        label = '2 tyg.';
+        label = '2 tygodnie';
         break;
       case CalendarFormat.month:
-        label = 'mies';
+        label = 'miesiąc';
         break;
     }
 
