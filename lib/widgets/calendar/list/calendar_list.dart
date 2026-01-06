@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/cash_model/cash.dart';
 import '../../cards/cash_card.dart';
+import '../../cards/piggy.dart';
 
 class CalendarList extends StatelessWidget {
   const CalendarList({
@@ -25,13 +26,9 @@ class CalendarList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (cashList.isEmpty) {
-      return Center(
-        child: Text(
-          emptyText,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
+      return PiggyCard(message: emptyText);
     }
+
 
     return ListView.separated(
       itemCount: cashList.length,

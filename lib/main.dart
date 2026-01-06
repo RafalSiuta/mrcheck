@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'providers/cashprovider.dart';
 import 'providers/settingsprovider.dart';
 import 'providers/walletprovider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,9 +83,17 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'MrCash',
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: [
+          // AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [Locale('pl', 'PL'),],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
+
           scaffoldBackgroundColor: const Color(0xfff5f5f5),
           textTheme: TextTheme(
             headlineLarge: GoogleFonts.exo2(

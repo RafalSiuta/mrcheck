@@ -165,6 +165,93 @@ class CalendarScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+                Builder(
+                  builder: (context) {
+                    final focusedMonth = cashProvider.focusedDay;
+                    final monthlyCash = cashProvider.cashList.where(
+                      (cash) =>
+                          cash.date.year == focusedMonth.year &&
+                          cash.date.month == focusedMonth.month,
+                    );
+
+                    double totalIncome = 0;
+                    double totalExpense = 0;
+                    String currency = 'zł';
+
+                    for (final cash in monthlyCash) {
+                      final total = cashProvider.sumItems(cash);
+                      currency = cash.currency;
+                      if (cash.isIncome) {
+                        totalIncome += total;
+                      } else {
+                        totalExpense += total;
+                      }
+                    }
+
+                    final difference = totalIncome - totalExpense;
+                    final monthLabel = DateFormat('LLLL yyyy', 'pl_PL')
+                        .format(focusedMonth);
+
+                    Widget summaryRow({
+                      required String label,
+                      required double amount,
+                      required Color color,
+                    }) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            label,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          Text(
+                            '${amount.toStringAsFixed(2)} $currency',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: color),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Podsumowanie $monthLabel',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          summaryRow(
+                            label: 'Przychody',
+                            amount: totalIncome,
+                            color: Colors.green.shade700,
+                          ),
+                          const SizedBox(height: 6),
+                          summaryRow(
+                            label: 'Wydatki',
+                            amount: totalExpense,
+                            color: Colors.red.shade700,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Różnica: ${difference.toStringAsFixed(2)} $currency',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
                 Expanded(
                   child: CalendarList(
                     cashList: selectedCash,
