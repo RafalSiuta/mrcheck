@@ -15,10 +15,12 @@ import '../widgets/menu_nav/creator_nav.dart';
 class CashCreator extends StatefulWidget {
   const CashCreator({
     required this.cash,
+    this.autofocusTitle = false,
     super.key,
   });
 
   final Cash cash;
+  final bool autofocusTitle;
 
   @override
   State<CashCreator> createState() => _CashCreatorState();
@@ -39,6 +41,13 @@ class _CashCreatorState extends State<CashCreator> {
     _items = List.of(widget.cash.itemsList);
     _isIncome = widget.cash.isIncome;
     _selectedDate = widget.cash.date;
+    if (widget.autofocusTitle) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _ensureFocus(_titleFocus);
+        }
+      });
+    }
   }
 
   @override
@@ -51,6 +60,17 @@ class _CashCreatorState extends State<CashCreator> {
   void _ensureFocus(FocusNode node) {
     if (!node.hasFocus) {
       node.requestFocus();
+    }
+  }
+
+  bool _isTitleKeyboardOpen() {
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    return _titleFocus.hasFocus && viewInsets.bottom > 0;
+  }
+
+  void _dismissTitleKeyboardIfOpen() {
+    if (_isTitleKeyboardOpen()) {
+      FocusScope.of(context).unfocus();
     }
   }
 
@@ -92,6 +112,7 @@ class _CashCreatorState extends State<CashCreator> {
   }
 
   Future<void> _showItemDialog({ValueItem? item, int? index}) async {
+    _dismissTitleKeyboardIfOpen();
     if (index != null) {
       setState(() {
         _editingIndex = index;
@@ -176,6 +197,7 @@ class _CashCreatorState extends State<CashCreator> {
   }
 
   Future<void> _pickDate() async {
+    _dismissTitleKeyboardIfOpen();
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -224,6 +246,7 @@ class _CashCreatorState extends State<CashCreator> {
                             TextField(
                               controller: _titleController,
                               focusNode: _titleFocus,
+                              autofocus: widget.autofocusTitle,
                               style: Theme.of(context).textTheme.headlineLarge,
                               textInputAction: TextInputAction.next,
                               onTap: () => _ensureFocus(_titleFocus),

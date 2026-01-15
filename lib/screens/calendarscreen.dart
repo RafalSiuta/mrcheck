@@ -88,7 +88,10 @@ class CalendarScreen extends StatelessWidget {
                       await Navigator.push(
                         context,
                         CustomPageRoute(
-                          child: CashCreator(cash: newCash),
+                          child: CashCreator(
+                            cash: newCash,
+                            autofocusTitle: true,
+                          ),
                           direction: AxisDirection.up,
                         ),
                       );
@@ -283,7 +286,10 @@ class CalendarScreen extends StatelessWidget {
                       await Navigator.push(
                         context,
                         CustomPageRoute(
-                          child: CashCreator(cash: cash),
+                          child: CashCreator(
+                            cash: cash,
+                            autofocusTitle: false,
+                          ),
                           direction: AxisDirection.up,
                         ),
                       );

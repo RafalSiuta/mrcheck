@@ -44,6 +44,7 @@ class _InutDialogState extends State<InutDialog> {
   late final TextEditingController _valueController;
   late Set<String> _selectedCategories;
   String? _errorText;
+  bool _showCategories = false;
 
   @override
   void initState() {
@@ -93,89 +94,125 @@ class _InutDialogState extends State<InutDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 12),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Nazwa pozycji'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _valueController,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Wartość pozycji',
-              suffixText: widget.currency,
-              errorText: _errorText,
+    final media = MediaQuery.of(context);
+    final isKeyboardOpen = media.viewInsets.bottom > 0;
+   // final availableHeight = media.size.height - media.viewInsets.bottom;
+   // final maxDialogHeight = availableHeight * 0.7;
+
+    return AnimatedPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      child: AlertDialog(
+        insetPadding: EdgeInsets.zero,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text(widget.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Nazwa pozycji'),
             ),
-            onSubmitted: (_) => _submit(),
-          ),
-          if (widget.showCategories) ...[
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Kategorie',
-                style: Theme.of(context).textTheme.labelMedium,
+            TextField(
+              controller: _valueController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Wartość pozycji',
+                suffixText: widget.currency,
+                errorText: _errorText,
               ),
+              onSubmitted: (_) => _submit(),
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: 80,
-              child: GridView.builder(
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 2,
-                  crossAxisSpacing: 2,
-                  childAspectRatio: 1 / 1.6,
-                ),
-                itemCount: categoryList.length,
-                itemBuilder: (context, index) {
-                  final category = categoryList[index];
-                  final isSelected =
-                      _selectedCategories.contains(category);
-                  return FilterChip(
-                    label: Text(
-                      category,
-                      style: TextStyle(
-                        fontSize: 8.0,
-                        color: isSelected ? Colors.white : ink,
+            if (widget.showCategories) ...[
+              // const SizedBox(height: 12),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () {
+                    if (isKeyboardOpen) {
+                      FocusScope.of(context).unfocus();
+                    }
+                    setState(() {
+                      _showCategories = !_showCategories;
+                    });
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Dodaj kategorie',
+                        style: Theme.of(context).textTheme.labelMedium,
                       ),
-                    ),
-                    showCheckmark: false,
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    side: const BorderSide(color: ink),
-                    backgroundColor: Colors.transparent,
-                    selectedColor: ink,
-                    disabledColor: Colors.transparent,
-                    selected: isSelected,
-                    onSelected: (_) => _toggleCategory(category),
-                  );
-                },
+                      const SizedBox(width: 6),
+                      Icon(
+                        isKeyboardOpen
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 10),
+              Visibility(
+                visible: _showCategories && !isKeyboardOpen,
+                child: SizedBox(
+                  width: media.size.width,
+                  height: 60,
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    scrollDirection: Axis.horizontal,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 2,
+                      crossAxisSpacing: 2,
+                      childAspectRatio: 1 / 2.2,
+                    ),
+                    itemCount: categoryList.length,
+                    itemBuilder: (context, index) {
+                      final category = categoryList[index];
+                      final isSelected =
+                          _selectedCategories.contains(category);
+                      return FilterChip(
+                        label: Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 8.0,
+                            color: isSelected ? Colors.white : ink,
+                          ),
+                        ),
+                        showCheckmark: false,
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        side: const BorderSide(color: ink),
+                        backgroundColor: Colors.transparent,
+                        selectedColor: ink,
+                        disabledColor: Colors.transparent,
+                        selected: isSelected,
+                        onSelected: (_) => _toggleCategory(category),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: _submit,
+            child: Text(widget.confirmLabel),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Anuluj'),
-        ),
-        TextButton(
-          onPressed: _submit,
-          child: Text(widget.confirmLabel),
-        ),
-      ],
     );
   }
 }

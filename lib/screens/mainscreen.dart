@@ -141,7 +141,10 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
           await Navigator.push(
             context,
             CustomPageRoute(
-              child: CashCreator(cash: placeholderCash),
+              child: CashCreator(
+                cash: placeholderCash,
+                autofocusTitle: true,
+              ),
               direction: AxisDirection.up,
             ),
           );

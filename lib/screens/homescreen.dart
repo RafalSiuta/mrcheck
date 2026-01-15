@@ -79,7 +79,10 @@ class HomeScreen extends StatelessWidget {
                             await Navigator.push(
                               context,
                               CustomPageRoute(
-                                child: CashCreator(cash: cash),
+                                child: CashCreator(
+                                  cash: cash,
+                                  autofocusTitle: false,
+                                ),
                                 direction: AxisDirection.up,
                               ),
                             );
