@@ -163,31 +163,32 @@ class _InutDialogState extends State<InutDialog> {
                 visible: _showCategories && !isKeyboardOpen,
                 child: SizedBox(
                   width: media.size.width,
-                  height: 60,
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    scrollDirection: Axis.horizontal,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 2,
-                      crossAxisSpacing: 2,
-                      childAspectRatio: 1 / 2.2,
-                    ),
-                    itemCount: categoryList.length,
-                    itemBuilder: (context, index) {
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List<Widget>.generate(categoryList.length, (index) {
                       final category = categoryList[index];
                       final isSelected =
                           _selectedCategories.contains(category);
                       return FilterChip(
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: const VisualDensity(
+                          horizontal: 0,
+                          vertical: -4,
+                        ),
                         label: Text(
                           category,
                           style: TextStyle(
-                            fontSize: 8.0,
+                            fontSize: 8,
                             color: isSelected ? Colors.white : ink,
                           ),
                         ),
+                        labelPadding: EdgeInsets.zero,
                         showCheckmark: false,
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 0,
+                        ),
                         side: const BorderSide(color: ink),
                         backgroundColor: Colors.transparent,
                         selectedColor: ink,
@@ -195,8 +196,41 @@ class _InutDialogState extends State<InutDialog> {
                         selected: isSelected,
                         onSelected: (_) => _toggleCategory(category),
                       );
-                    },
+                    }),
                   ),
+                  // GridView.builder(
+                  //   shrinkWrap: true,
+                  //   scrollDirection: Axis.horizontal,
+                  //   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  //     crossAxisCount: 2,
+                  //     mainAxisSpacing: 2,
+                  //     crossAxisSpacing: 2,
+                  //     childAspectRatio: 1 / 2.2,
+                  //   ),
+                  //   itemCount: categoryList.length,
+                  //   itemBuilder: (context, index) {
+                  //     final category = categoryList[index];
+                  //     final isSelected =
+                  //         _selectedCategories.contains(category);
+                  //     return FilterChip(
+                  //       label: Text(
+                  //         category,
+                  //         style: TextStyle(
+                  //           fontSize: 8.0,
+                  //           color: isSelected ? Colors.white : ink,
+                  //         ),
+                  //       ),
+                  //       showCheckmark: false,
+                  //       padding: const EdgeInsets.symmetric(horizontal: 2),
+                  //       side: const BorderSide(color: ink),
+                  //       backgroundColor: Colors.transparent,
+                  //       selectedColor: ink,
+                  //       disabledColor: Colors.transparent,
+                  //       selected: isSelected,
+                  //       onSelected: (_) => _toggleCategory(category),
+                  //     );
+                  //   },
+                  // ),
                 ),
               ),
             ],

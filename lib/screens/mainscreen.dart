@@ -79,7 +79,7 @@ class _MainState extends State<Main> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final placeholderCash = Cash(
-      id: makeId(),
+      id: '',
       name: '',
       value: 0,
       date: DateTime.now(),

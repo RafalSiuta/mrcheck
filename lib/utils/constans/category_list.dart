@@ -1,7 +1,9 @@
 const List<String> categoryList = [
   'zakupy',
   'spożywcze',
+  'kawa',
   'chemia',
+  'kosmetyki',
   'transport',
   'suplementy',
   'odzież',
@@ -13,6 +15,8 @@ const List<String> categoryList = [
   'rozrywka',
   'hobby',
   'edukacja',
+  'książki',
+  'kursy',
   'oprogramowanie',
   'inne',
 ];

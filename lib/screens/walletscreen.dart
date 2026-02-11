@@ -20,7 +20,7 @@ class WalletScreen extends StatelessWidget {
     CurrencyOption(symbol: 'USD', short: 'usd', valueToPln: 3.9),
     CurrencyOption(symbol: 'EUR', short: 'eur', valueToPln: 4.2),
     CurrencyOption(symbol: 'GBP', short: 'gbp', valueToPln: 5.0),
-    CurrencyOption(symbol: '1oz GOLD', short: 'uncja', valueToPln: 15000),
+    CurrencyOption(symbol: '1oz GOLD', short: 'uncja', valueToPln: 16500),
     CurrencyOption(symbol: '1oz SILVER', short: 'uncja', valueToPln: 322),
   ];
 

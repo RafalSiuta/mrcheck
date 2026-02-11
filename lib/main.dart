@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:mrcash/screens/mainscreen.dart';
-import 'package:mrcash/screens/settingsscreen.dart';
+import 'package:mrcash/screens/settings/settingsscreen.dart';
 import 'package:mrcash/utils/routes/custom_route.dart';
 import 'package:provider/provider.dart';
 import 'providers/cashprovider.dart';
