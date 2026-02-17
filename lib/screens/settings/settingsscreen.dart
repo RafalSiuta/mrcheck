@@ -3,7 +3,7 @@ import 'package:mrcash/models/nav_model/nav_model.dart';
 import 'package:mrcash/models/screen_model/screen_model.dart';
 import 'package:mrcash/screens/settings/setsoptions/about.dart';
 import 'package:mrcash/screens/settings/setsoptions/sets.dart';
-import 'package:mrcash/screens/settings/setsoptions/themes.dart';
+import 'package:mrcash/screens/settings/setsoptions/currencies.dart';
 import 'package:mrcash/widgets/menu_nav/nav_rail.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -25,9 +25,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     ),
     ScreenModel(
-      page: const ThemesScreen(),
+      page: const CurrenciesScreen(),
       title: NavModel(
-        title: 'wygląd',
+        title: 'waluty',
       ),
     ),
     ScreenModel(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mrcash/utils/extensions/string_extension.dart';
+import 'package:mrcash/utils/mask_text_helper.dart';
 import 'package:provider/provider.dart';
 
-import '../models/currency_model/currency.dart';
+import '../providers/settingsprovider.dart';
 import '../providers/walletprovider.dart';
 import '../utils/calculations/currency_calculator.dart';
 import '../utils/routes/custom_route.dart';
@@ -10,41 +11,26 @@ import '../widgets/buttons/icon_btn.dart';
 import '../widgets/cards/wallet_card.dart';
 import 'wallet_creator.dart';
 
-
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
-
-  static const List<CurrencyOption> _currencyOptions = [
-    CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
-    CurrencyOption(symbol: 'CHF', short: 'chf', valueToPln: 4.65),
-    CurrencyOption(symbol: 'USD', short: 'usd', valueToPln: 3.9),
-    CurrencyOption(symbol: 'EUR', short: 'eur', valueToPln: 4.2),
-    CurrencyOption(symbol: 'GBP', short: 'gbp', valueToPln: 5.0),
-    CurrencyOption(symbol: '1oz GOLD', short: 'uncja', valueToPln: 16500),
-    CurrencyOption(symbol: '1oz SILVER', short: 'uncja', valueToPln: 322),
-  ];
-
-  double _rateFor(String currencyShort) {
-    final match = _currencyOptions.firstWhere(
-      (option) => option.short.toLowerCase() == currencyShort.toLowerCase(),
-      orElse: () =>
-          const CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
-    );
-    return match.valueToPln;
-  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 8.0),
-        child: Consumer<WalletProvider>(
-          builder: (context, walletProvider, _) {
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
+        child: Consumer2<WalletProvider, SettingsProvider>(
+          builder: (context, walletProvider, settingsProvider, _) {
             final wallets = walletProvider.wallets;
             final totalValuePln = wallets.fold<double>(0, (sum, wallet) {
-              final rate = _rateFor(wallet.currency);
+              final rate = settingsProvider.rateFor(wallet.currency);
               return sum + wallet.value * rate;
             });
+            final totalValueText = totalValuePln.toStringAsFixed(2);
+            final displayTotalValue = settingsProvider.lockWallet
+                ? maskText(totalValueText)
+                : totalValueText;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -79,7 +65,7 @@ class WalletScreen extends StatelessWidget {
                     children: [
                       const TextSpan(text: 'razem: '),
                       TextSpan(
-                        text: '${totalValuePln.toStringAsFixed(2)} $globalCurrency',
+                        text: '$displayTotalValue $globalCurrency',
                       ),
                     ],
                   ),
@@ -97,16 +83,17 @@ class WalletScreen extends StatelessWidget {
                       mainAxisSpacing: 12,
                     ),
                     itemBuilder: (context, index) {
-                            final wallet = wallets[index];
-                            final iconCode = wallet.icon == 0
-                                ? Icons.account_balance_wallet.codePoint
-                                : wallet.icon;
-                            return WalletCard(
-                              title: wallet.title,
-                              total: wallet.value,
-                              icon: IconData(iconCode, fontFamily: 'MaterialIcons'),
-                              backgroundColor: Color(wallet.color),
-                              onClick: () async {
+                      final wallet = wallets[index];
+                      final iconCode = wallet.icon == 0
+                          ? Icons.account_balance_wallet.codePoint
+                          : wallet.icon;
+                      return WalletCard(
+                        title: wallet.title,
+                        total: wallet.value,
+                        lockWallet: settingsProvider.lockWallet,
+                        icon: IconData(iconCode, fontFamily: 'MaterialIcons'),
+                        backgroundColor: Color(wallet.color),
+                        onClick: () async {
                           await Navigator.push(
                             context,
                             CustomPageRoute(

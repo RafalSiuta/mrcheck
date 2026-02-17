@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-
+import 'package:mrcash/utils/mask_text_helper.dart';
 
 class WalletCard extends StatelessWidget {
   const WalletCard({
-    this.title = "title",
+    this.title = 'title',
     this.total = 0,
     this.icon = Icons.attach_money,
     this.backgroundColor,
     this.onClick,
+    this.lockWallet = false,
     super.key,
   });
 
@@ -16,12 +17,15 @@ class WalletCard extends StatelessWidget {
   final IconData icon;
   final Color? backgroundColor;
   final VoidCallback? onClick;
+  final bool lockWallet;
 
   @override
   Widget build(BuildContext context) {
     const ink = Color(0xFF0F0F0F);
     final textStyle =
         Theme.of(context).textTheme.bodyMedium?.copyWith(color: ink);
+    final totalText = total.toStringAsFixed(2);
+    final displayTotal = lockWallet ? maskText(totalText) : totalText;
 
     return SizedBox(
       width: double.infinity,
@@ -52,7 +56,7 @@ class WalletCard extends StatelessWidget {
                         children: [
                           TextSpan(text: '$title\n'),
                           const TextSpan(text: 'total '),
-                          TextSpan(text: total.toString()),
+                          TextSpan(text: displayTotal),
                         ],
                       ),
                     ),
