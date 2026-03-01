@@ -28,6 +28,7 @@ class HomeScreen extends StatelessWidget {
         final totalExpense = dailyCash
             .where((c) => !c.isIncome)
             .fold<double>(0, (sum, cash) => sum + sumItems(cash));
+        final difference = totalIncome - totalExpense;
         final currency = dailyCash.isNotEmpty ? dailyCash.first.currency : '';
 
         return SafeArea(
@@ -53,18 +54,47 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RichText(
-                        text: TextSpan(
-                          style: Theme.of(context).textTheme.headlineMedium,
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const TextSpan(text: 'podsumowanie\n'),
-                            TextSpan(
-                              text:
-                                  'przychody: ${totalIncome.toStringAsFixed(2)} $currency\n',
+                            Text(
+                              'Podsumowanie',
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                            TextSpan(
-                              text:
-                                  'wydatki: ${totalExpense.toStringAsFixed(2)} $currency',
+                            const SizedBox(height: 8),
+                            _summaryRow(
+                              context: context,
+                              label: 'Przychody',
+                              amount: totalIncome,
+                              currency: currency,
+                              color: Colors.green.shade700,
+                            ),
+                            const SizedBox(height: 6),
+                            _summaryRow(
+                              context: context,
+                              label: 'Wydatki',
+                              amount: totalExpense,
+                              currency: currency,
+                              color: Colors.red.shade700,
+                            ),
+                            const SizedBox(height: 6),
+                            _summaryRow(
+                              context: context,
+                              label: 'Zostało',
+                              amount: difference,
+                              currency: currency,
+                              color: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.color ??
+                                  Colors.black,
                             ),
                           ],
                         ),
@@ -100,4 +130,26 @@ class HomeScreen extends StatelessWidget {
       },
     );
   }
+}
+
+Widget _summaryRow({
+  required BuildContext context,
+  required String label,
+  required double amount,
+  required String currency,
+  required Color color,
+}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        label,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      Text(
+        '${amount.toStringAsFixed(2)} $currency',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
+      ),
+    ],
+  );
 }

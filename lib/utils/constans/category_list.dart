@@ -26,5 +26,6 @@ const List<String> categoryList = [
   'książki',
   'kursy',
   'oprogramowanie',
+  'przemysłowe',
   'inne',
 ];

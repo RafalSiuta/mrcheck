@@ -42,6 +42,15 @@ class WalletScreen extends StatelessWidget {
                     IconBtn(
                       icon: Icons.add,
                       onClick: () {
+                        if (settingsProvider.lockWallet) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Portfel jest zablokowany.'),
+                            ),
+                          );
+                          return;
+                        }
+
                         final newWallet =
                             context.read<WalletProvider>().createEmptyWallet();
                         Navigator.push(
@@ -94,6 +103,14 @@ class WalletScreen extends StatelessWidget {
                         icon: IconData(iconCode, fontFamily: 'MaterialIcons'),
                         backgroundColor: Color(wallet.color),
                         onClick: () async {
+                          if (settingsProvider.lockWallet) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Portfel jest zablokowany.'),
+                              ),
+                            );
+                            return;
+                          }
                           await Navigator.push(
                             context,
                             CustomPageRoute(
