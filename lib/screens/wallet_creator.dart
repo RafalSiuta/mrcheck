@@ -18,6 +18,183 @@ import '../widgets/dialogs/inutdialog.dart';
 import '../widgets/dialogs/wallet_sets_dialog.dart';
 import '../widgets/menu_nav/creator_nav.dart';
 
+class _PendingWalletTransfer {
+  const _PendingWalletTransfer({
+    required this.destinationWalletId,
+    required this.destinationItem,
+  });
+
+  final String destinationWalletId;
+  final ValueItem destinationItem;
+}
+
+class _TransferDialogResult {
+  const _TransferDialogResult({
+    required this.name,
+    required this.amount,
+    required this.destinationWalletId,
+  });
+
+  final String name;
+  final double amount;
+  final String destinationWalletId;
+}
+
+class _TransferDialog extends StatefulWidget {
+  const _TransferDialog({
+    required this.wallets,
+    required this.currency,
+  });
+
+  final List<Wallet> wallets;
+  final String currency;
+
+  @override
+  State<_TransferDialog> createState() => _TransferDialogState();
+}
+
+class _TransferDialogState extends State<_TransferDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _amountController;
+  late String _selectedWalletId;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: 'przelew własny');
+    _amountController = TextEditingController();
+    _selectedWalletId = widget.wallets.first.id;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final amount = double.tryParse(
+      _amountController.text.replaceAll(',', '.'),
+    );
+
+    if (name.isEmpty || amount == null || amount <= 0) {
+      setState(() {
+        _errorText = 'Podaj poprawną nazwę i kwotę';
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _TransferDialogResult(
+        name: name,
+        amount: amount,
+        destinationWalletId: _selectedWalletId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Przelew'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: 'Nazwa przelewu',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Kwota',
+              suffixText: widget.currency,
+              errorText: _errorText,
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 70,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.wallets.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final wallet = widget.wallets[index];
+                final isSelected = wallet.id == _selectedWalletId;
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedWalletId = wallet.id;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 64,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          IconData(
+                            wallet.icon,
+                            fontFamily: 'MaterialIcons',
+                          ),
+                          size: 18,
+                          color: Colors.black54,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          wallet.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Anuluj'),
+        ),
+        TextButton(
+          onPressed: _submit,
+          child: const Text('Potwierdź'),
+        ),
+      ],
+    );
+  }
+}
+
 class WalletCreator extends StatefulWidget {
   const WalletCreator({
     required this.wallet,
@@ -42,6 +219,7 @@ class _WalletCreatorState extends State<WalletCreator> {
   late int _selectedColorValue;
   late int _selectedIconCode;
   late bool _isCurrentWallet;
+  final List<_PendingWalletTransfer> _pendingTransfers = [];
   Color get _selectedColor => Color(_selectedColorValue);
   static const List<CurrencyOption> _currencyOptions = [
     CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
@@ -90,7 +268,7 @@ class _WalletCreatorState extends State<WalletCreator> {
   double get _itemsTotal =>
       _items.fold<double>(0, (sum, item) => sum + item.value);
 
-  void _saveWallet() {
+  Future<void> _saveWallet() async {
     final provider = context.read<WalletProvider>();
     final walletId =
         widget.wallet.id.isNotEmpty ? widget.wallet.id : makeId();
@@ -106,11 +284,125 @@ class _WalletCreatorState extends State<WalletCreator> {
       isCurrentWallet: _isCurrentWallet,
     );
     if (provider.wallets.any((w) => w.id == walletId)) {
-      provider.updateWallet(updatedWallet);
+      await provider.updateWallet(updatedWallet);
     } else {
-      provider.addWallet(updatedWallet);
+      await provider.addWallet(updatedWallet);
+    }
+
+    await _applyPendingTransfers(provider);
+    _pendingTransfers.clear();
+
+    if (!mounted) {
+      return;
     }
     Navigator.pop(context);
+  }
+
+  Future<void> _applyPendingTransfers(WalletProvider walletProvider) async {
+    for (final transfer in _pendingTransfers) {
+      final index = walletProvider.wallets.indexWhere(
+        (wallet) => wallet.id == transfer.destinationWalletId,
+      );
+      if (index == -1) {
+        continue;
+      }
+
+      final wallet = walletProvider.wallets[index];
+      final updatedItems = List<ValueItem>.from(wallet.itemsList)
+        ..add(transfer.destinationItem);
+      final updatedWallet = Wallet(
+        id: wallet.id,
+        title: wallet.title,
+        value: wallet.value + transfer.destinationItem.value,
+        icon: wallet.icon,
+        currency: wallet.currency,
+        color: wallet.color,
+        date: wallet.date,
+        itemsList: updatedItems,
+        isCurrentWallet: wallet.isCurrentWallet,
+      );
+      await walletProvider.updateWallet(updatedWallet);
+    }
+  }
+
+  double _convertAmount({
+    required double amount,
+    required String fromCurrency,
+    required String toCurrency,
+  }) {
+    if (fromCurrency.toLowerCase() == toCurrency.toLowerCase()) {
+      return amount;
+    }
+
+    final settingsProvider = context.read<SettingsProvider>();
+    final amountInGlobal = toGlobalCurrency(
+      amount: amount,
+      rateToPln: settingsProvider.rateFor(fromCurrency),
+    );
+    final targetRate = settingsProvider.rateFor(toCurrency);
+    if (targetRate == 0) {
+      return amountInGlobal;
+    }
+    return amountInGlobal / targetRate;
+  }
+
+  Future<void> _showTransferDialog(WalletProvider walletProvider) async {
+    final wallets = walletProvider.wallets
+        .where((wallet) => wallet.id != widget.wallet.id)
+        .toList();
+
+    if (wallets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Brak dostępnych portfeli do przelewu')),
+      );
+      return;
+    }
+
+    final result = await showDialog<_TransferDialogResult>(
+      context: context,
+      builder: (_) => _TransferDialog(
+        wallets: wallets,
+        currency: _selectedCurrency,
+      ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    final destinationWallet = walletProvider.wallets.firstWhere(
+      (wallet) => wallet.id == result.destinationWalletId,
+    );
+    final destinationAmount = _convertAmount(
+      amount: result.amount,
+      fromCurrency: _selectedCurrency,
+      toCurrency: destinationWallet.currency,
+    );
+    final now = DateTime.now();
+
+    setState(() {
+      _items.add(
+        ValueItem(
+          id: makeId(),
+          name: result.name,
+          value: -result.amount,
+          date: now,
+          categories: const ['transfer_out'],
+        ),
+      );
+      _pendingTransfers.add(
+        _PendingWalletTransfer(
+          destinationWalletId: destinationWallet.id,
+          destinationItem: ValueItem(
+            id: makeId(),
+            name: result.name,
+            value: destinationAmount,
+            date: now,
+            categories: const ['transfer_in'],
+          ),
+        ),
+      );
+    });
   }
 
   Future<void> _showItemDialog({ValueItem? item, int? index}) async {
@@ -624,6 +916,10 @@ class _WalletCreatorState extends State<WalletCreator> {
                       CreatorNavItem(title: 'zapisz', icon: Icons.save),
                       CreatorNavItem(title: 'sets', icon: Icons.settings),
                       CreatorNavItem(title: 'dodaj', icon: Icons.add),
+                      CreatorNavItem(
+                        title: 'przelew',
+                        icon: Icons.currency_exchange,
+                      ),
                       CreatorNavItem(title: 'waluta', icon: Icons.attach_money),
                       CreatorNavItem(title: 'symbol', icon: Icons.account_balance_wallet),
                       CreatorNavItem(title: 'kolor', icon: Icons.color_lens),
@@ -644,18 +940,21 @@ class _WalletCreatorState extends State<WalletCreator> {
                           _showItemDialog();
                           break;
                         case 3:
-                          _pickCurrency();
+                          _showTransferDialog(walletProvider);
                           break;
                         case 4:
-                          _pickIcon();
+                          _pickCurrency();
                           break;
                         case 5:
-                          _pickColor();
+                          _pickIcon();
                           break;
                         case 6:
-                          _confirmDeleteCash();
+                          _pickColor();
                           break;
                         case 7:
+                          _confirmDeleteCash();
+                          break;
+                        case 8:
                           Navigator.pop(context);
                           break;
                       }

@@ -3,7 +3,7 @@
 *.env
 # This is dynamic in a monorepo
 bin/internal/engine.version
-
+update_history.txt
 # Miscellaneous
 *.class
 *.lock
