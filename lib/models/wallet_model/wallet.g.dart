@@ -25,13 +25,14 @@ class WalletAdapter extends TypeAdapter<Wallet> {
       color: fields[5] as int,
       currency: fields[6] as String,
       itemsList: (fields[7] as List).cast<ValueItem>(),
+      isCurrentWallet: fields[8] == null ? false : fields[8] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Wallet obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class WalletAdapter extends TypeAdapter<Wallet> {
       ..writeByte(6)
       ..write(obj.currency)
       ..writeByte(7)
-      ..write(obj.itemsList);
+      ..write(obj.itemsList)
+      ..writeByte(8)
+      ..write(obj.isCurrentWallet);
   }
 
   @override

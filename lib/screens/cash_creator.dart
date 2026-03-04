@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mrcash/utils/extensions/string_extension.dart';
 import 'package:provider/provider.dart';
 
 import '../models/cash_model/cash.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../models/value_model/value_item.dart';
 import '../providers/cashprovider.dart';
+import '../providers/walletprovider.dart';
 import '../utils/id_generator/id_generator.dart';
 import '../widgets/cards/cash_card.dart';
 import '../widgets/dialogs/inutdialog.dart';
@@ -79,8 +79,13 @@ class _CashCreatorState extends State<CashCreator> {
 
   Future<void> _saveCash() async {
     final provider = context.read<CashProvider>();
+    final walletProvider = context.read<WalletProvider>();
     final cashId =
         widget.cash.id.isNotEmpty ? widget.cash.id : makeId();
+    final previousCash = widget.cash.id.isNotEmpty &&
+            provider.cashList.any((c) => c.id == widget.cash.id)
+        ? widget.cash
+        : null;
     final updatedCash = Cash(
       id: cashId,
       name: _titleController.text.trim(),
@@ -95,6 +100,11 @@ class _CashCreatorState extends State<CashCreator> {
     } else {
       await provider.addCash(updatedCash);
     }
+    await walletProvider.syncCurrentWalletWithCash(
+      cash: updatedCash,
+      previousCash: previousCash,
+    );
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -141,8 +151,9 @@ class _CashCreatorState extends State<CashCreator> {
 
     setState(() {
       if (isEdit) {
-        final existing = _items[index!];
-        _items[index!] = ValueItem(
+        final editIndex = index;
+        final existing = _items[editIndex];
+        _items[editIndex] = ValueItem(
           id: existing.id,
           name: result.name,
           value: result.value,
@@ -186,9 +197,13 @@ class _CashCreatorState extends State<CashCreator> {
       ),
     );
 
+    if (!mounted) return;
     if (shouldDelete == true) {
       if (widget.cash.id.isNotEmpty) {
-        await context.read<CashProvider>().removeCash(widget.cash.id);
+        final cashProvider = context.read<CashProvider>();
+        final walletProvider = context.read<WalletProvider>();
+        await cashProvider.removeCash(widget.cash.id);
+        await walletProvider.removeCashFromCurrentWallet(widget.cash);
       }
       if (mounted) {
         Navigator.pop(context);

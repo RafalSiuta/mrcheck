@@ -14,6 +14,7 @@ class Wallet {
     this.color = 0xFFFFFFFF,
     this.currency = 'zł',
     this.itemsList = const [],
+    this.isCurrentWallet = false,
   });
 
   @HiveField(0)
@@ -39,4 +40,7 @@ class Wallet {
 
   @HiveField(7)
   final List<ValueItem> itemsList;
+
+  @HiveField(8)
+  final bool isCurrentWallet;
 }

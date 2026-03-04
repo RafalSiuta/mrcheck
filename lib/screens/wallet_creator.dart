@@ -8,11 +8,14 @@ import '../models/currency_model/currency.dart';
 import '../models/icon_model/icon_option.dart';
 import '../models/nav_model/creator_nav_item.dart';
 import '../providers/walletprovider.dart';
+import '../providers/settingsprovider.dart';
+import '../utils/calculations/currency_calculator.dart';
 import '../utils/id_generator/id_generator.dart';
 import '../widgets/cards/cash_card.dart';
 import '../widgets/dialogs/color_dialog.dart';
 import '../widgets/dialogs/icon_dialog.dart';
 import '../widgets/dialogs/inutdialog.dart';
+import '../widgets/dialogs/wallet_sets_dialog.dart';
 import '../widgets/menu_nav/creator_nav.dart';
 
 class WalletCreator extends StatefulWidget {
@@ -38,6 +41,7 @@ class _WalletCreatorState extends State<WalletCreator> {
   late DateTime _walletDate;
   late int _selectedColorValue;
   late int _selectedIconCode;
+  late bool _isCurrentWallet;
   Color get _selectedColor => Color(_selectedColorValue);
   static const List<CurrencyOption> _currencyOptions = [
     CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
@@ -61,6 +65,7 @@ class _WalletCreatorState extends State<WalletCreator> {
     _selectedIconCode = widget.wallet.icon == 0
         ? Icons.account_balance_wallet.codePoint
         : widget.wallet.icon;
+    _isCurrentWallet = widget.wallet.isCurrentWallet;
 
     if (widget.editEnable) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -98,6 +103,7 @@ class _WalletCreatorState extends State<WalletCreator> {
       color: _selectedColorValue,
       date: _walletDate,
       itemsList: _items,
+      isCurrentWallet: _isCurrentWallet,
     );
     if (provider.wallets.any((w) => w.id == walletId)) {
       provider.updateWallet(updatedWallet);
@@ -137,8 +143,9 @@ class _WalletCreatorState extends State<WalletCreator> {
 
     setState(() {
       if (isEdit) {
-        final existing = _items[index!];
-        _items[index!] = ValueItem(
+        final editIndex = index;
+        final existing = _items[editIndex];
+        _items[editIndex] = ValueItem(
           id: existing.id,
           name: result.name,
           value: result.value,
@@ -248,6 +255,23 @@ class _WalletCreatorState extends State<WalletCreator> {
     );
 
     if (selected != null) {
+      if (_isCurrentWallet &&
+          selected.short.toLowerCase() != globalCurrency.toLowerCase()) {
+        if (!mounted) return;
+        final settingsProvider = context.read<SettingsProvider>();
+        final fromCurrency = _selectedCurrency;
+        final shouldConvert = await _confirmConvertToGlobalCurrency(
+          fromCurrencyShort: fromCurrency,
+        );
+        if (!mounted) return;
+        if (!shouldConvert) return;
+
+        setState(() {
+          _convertDraftWalletCurrencyToGlobal(settingsProvider, fromCurrency);
+        });
+        return;
+      }
+
       setState(() {
         _selectedCurrency = selected.short;
       });
@@ -275,14 +299,191 @@ class _WalletCreatorState extends State<WalletCreator> {
       ),
     );
 
+    if (!mounted) return;
     if (shouldDelete == true) {
       if (widget.wallet.id.isNotEmpty) {
-        context.read<WalletProvider>().removeWallet(widget.wallet.id);
+        await context.read<WalletProvider>().removeWallet(widget.wallet.id);
       }
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      if (!mounted) return;
+      Navigator.pop(context);
     }
+  }
+
+  Future<bool> _confirmSwitchCurrentWallet(Wallet currentWallet) async {
+    final newWalletName = _titleController.text.trim().isEmpty
+        ? 'nowy portfel'
+        : _titleController.text.trim();
+    final currentWalletAmount =
+        '${currentWallet.value.toStringAsFixed(2)} ${currentWallet.currency}';
+
+    final shouldSwitch = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Zmienić bieżący portfel?'),
+        content: Text(
+          'Bieżący portfel to "${currentWallet.title}" '
+          '($currentWalletAmount).\n\n'
+          'Czy chcesz ustawić "$newWalletName" jako bieżący portfel?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Zmień'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldSwitch ?? false;
+  }
+
+  Future<bool> _confirmConvertToGlobalCurrency({
+    required String fromCurrencyShort,
+  }) async {
+    final fromSymbol = _currencySymbol(fromCurrencyShort);
+    final globalSymbol = _currencySymbol(globalCurrency);
+    final shouldConvert = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Zmiana waluty bieżącego portfela'),
+        content: Text(
+          'Bieżący portfel musi mieć walutę globalną '
+          '($globalSymbol / $globalCurrency).\n\n'
+          'Obecna waluta: $fromSymbol / $fromCurrencyShort.\n'
+          'Czy przeliczyć dane portfela na walutę globalną?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Nie'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Tak'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldConvert ?? false;
+  }
+
+  String _currencySymbol(String shortCurrency) {
+    final match = _currencyOptions.where(
+      (option) =>
+          option.short.toLowerCase() == shortCurrency.toLowerCase(),
+    );
+    if (match.isNotEmpty) {
+      return match.first.symbol;
+    }
+    return shortCurrency.toUpperCase();
+  }
+
+  void _convertDraftWalletCurrencyToGlobal(
+    SettingsProvider settingsProvider,
+    String fromCurrency,
+  ) {
+    if (fromCurrency.toLowerCase() == globalCurrency.toLowerCase()) {
+      _selectedCurrency = globalCurrency;
+      return;
+    }
+
+    final sourceRate = settingsProvider.rateFor(fromCurrency);
+    _items = _items
+        .map(
+          (item) => ValueItem(
+            id: item.id,
+            name: item.name,
+            value: toGlobalCurrency(
+              amount: item.value,
+              rateToPln: sourceRate,
+            ),
+            date: item.date,
+            categories: item.categories,
+          ),
+        )
+        .toList();
+    _selectedCurrency = globalCurrency;
+  }
+
+  Future<void> _showSetsDialog(WalletProvider walletProvider) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        var dialogValue = _isCurrentWallet;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => WalletSetsDialog(
+            value: dialogValue,
+            onChanged: (nextValue) async {
+              if (!nextValue) {
+                setState(() {
+                  _isCurrentWallet = false;
+                });
+                setDialogState(() {
+                  dialogValue = false;
+                });
+                return;
+              }
+
+              if (_selectedCurrency.toLowerCase() !=
+                  globalCurrency.toLowerCase()) {
+                final settingsProvider = context.read<SettingsProvider>();
+                final fromCurrency = _selectedCurrency;
+                final shouldConvert = await _confirmConvertToGlobalCurrency(
+                  fromCurrencyShort: fromCurrency,
+                );
+                if (!mounted) return;
+                if (!shouldConvert) {
+                  setDialogState(() {
+                    dialogValue = false;
+                  });
+                  return;
+                }
+
+                setState(() {
+                  _convertDraftWalletCurrencyToGlobal(
+                    settingsProvider,
+                    fromCurrency,
+                  );
+                });
+              }
+
+              final currentWallet =
+                  walletProvider.currentWallet(excludeWalletId: widget.wallet.id);
+              if (currentWallet == null) {
+                setState(() {
+                  _isCurrentWallet = true;
+                });
+                setDialogState(() {
+                  dialogValue = true;
+                });
+                return;
+              }
+
+              final confirmed = await _confirmSwitchCurrentWallet(currentWallet);
+              if (!mounted) return;
+
+              if (confirmed) {
+                setState(() {
+                  _isCurrentWallet = true;
+                });
+                setDialogState(() {
+                  dialogValue = true;
+                });
+              } else {
+                setDialogState(() {
+                  dialogValue = false;
+                });
+              }
+            },
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -393,12 +594,16 @@ class _WalletCreatorState extends State<WalletCreator> {
                             ),
                             itemBuilder: (context, index) {
                               final item = _items[index];
+                              final isIncome = item.value == 0
+                                  ? null
+                                  : item.value > 0;
                               return CashCard(
                                 name: item.name,
                                 value: item.value,
                                 date: item.date,
                                 currency: currency,
                                 showDate: true,
+                                isIncome: isIncome,
                                 isEditing: _editingIndex == index,
                                 onEdit: () =>
                                     _showItemDialog(item: item, index: index),
@@ -412,42 +617,50 @@ class _WalletCreatorState extends State<WalletCreator> {
                   ),
                 ),
               ),
-              CreatorNav(
-                items: const [
-                  CreatorNavItem(title: 'zapisz', icon: Icons.save),
-                  CreatorNavItem(title: 'dodaj', icon: Icons.add),
-                  CreatorNavItem(title: 'waluta', icon: Icons.attach_money),
-                  CreatorNavItem(title: 'symbol', icon: Icons.account_balance_wallet),
-                  CreatorNavItem(title: 'kolor', icon: Icons.color_lens),
-                  CreatorNavItem(title: 'usuń', icon: Icons.delete),
-                  CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
-                ],
-                selectedIndex: -1,
-                navIconSize: 24,
-                onTap: (index) {
-                  switch (index) {
-                    case 0:
-                      _saveWallet();
-                      break;
-                    case 1:
-                      _showItemDialog();
-                      break;
-                    case 2:
-                      _pickCurrency();
-                      break;
-                    case 3:
-                      _pickIcon();
-                      break;
-                    case 4:
-                      _pickColor();
-                      break;
-                    case 5:
-                      _confirmDeleteCash();
-                      break;
-                    case 6:
-                      Navigator.pop(context);
-                      break;
-                  }
+              Consumer<WalletProvider>(
+                builder: (context, walletProvider, _) {
+                  return CreatorNav(
+                    items: const [
+                      CreatorNavItem(title: 'zapisz', icon: Icons.save),
+                      CreatorNavItem(title: 'sets', icon: Icons.settings),
+                      CreatorNavItem(title: 'dodaj', icon: Icons.add),
+                      CreatorNavItem(title: 'waluta', icon: Icons.attach_money),
+                      CreatorNavItem(title: 'symbol', icon: Icons.account_balance_wallet),
+                      CreatorNavItem(title: 'kolor', icon: Icons.color_lens),
+                      CreatorNavItem(title: 'usuń', icon: Icons.delete),
+                      CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
+                    ],
+                    selectedIndex: -1,
+                    navIconSize: 24,
+                    onTap: (index) {
+                      switch (index) {
+                        case 0:
+                          _saveWallet();
+                          break;
+                        case 1:
+                          _showSetsDialog(walletProvider);
+                          break;
+                        case 2:
+                          _showItemDialog();
+                          break;
+                        case 3:
+                          _pickCurrency();
+                          break;
+                        case 4:
+                          _pickIcon();
+                          break;
+                        case 5:
+                          _pickColor();
+                          break;
+                        case 6:
+                          _confirmDeleteCash();
+                          break;
+                        case 7:
+                          Navigator.pop(context);
+                          break;
+                      }
+                    },
+                  );
                 },
               ),
             ],

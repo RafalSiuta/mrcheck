@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mrcash/models/wallet_model/wallet.dart';
 import 'package:mrcash/utils/extensions/string_extension.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/walletprovider.dart';
 import '../utils/routes/custom_route.dart';
 import '../providers/cashprovider.dart';
 import '../widgets/calendar/list/calendar_list.dart';
+import '../widgets/cards/current_wallet.dart';
 import 'cash_creator.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -12,8 +15,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CashProvider>(
-      builder: (context, cashProvider, _) {
+    return Consumer2<CashProvider, WalletProvider>(
+      builder: (context, cashProvider, walletProvider, _) {
         final weekday = cashProvider.weekdayLabel;
         final formattedDate = cashProvider.formattedDate;
         final today = cashProvider.today;
@@ -28,8 +31,14 @@ class HomeScreen extends StatelessWidget {
         final totalExpense = dailyCash
             .where((c) => !c.isIncome)
             .fold<double>(0, (sum, cash) => sum + sumItems(cash));
-        final difference = totalIncome - totalExpense;
         final currency = dailyCash.isNotEmpty ? dailyCash.first.currency : '';
+        Wallet? currentWallet;
+        for (final wallet in walletProvider.wallets) {
+          if (wallet.isCurrentWallet) {
+            currentWallet = wallet;
+            break;
+          }
+        }
 
         return SafeArea(
           child: Padding(
@@ -54,51 +63,13 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
+                      if (currentWallet != null)
+                        CurrentWallet(
+                          wallet: currentWallet,
+                          income: totalIncome,
+                          outcome: totalExpense,
+                          currency: currency,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Podsumowanie',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            _summaryRow(
-                              context: context,
-                              label: 'Przychody',
-                              amount: totalIncome,
-                              currency: currency,
-                              color: Colors.green.shade700,
-                            ),
-                            const SizedBox(height: 6),
-                            _summaryRow(
-                              context: context,
-                              label: 'Wydatki',
-                              amount: totalExpense,
-                              currency: currency,
-                              color: Colors.red.shade700,
-                            ),
-                            const SizedBox(height: 6),
-                            _summaryRow(
-                              context: context,
-                              label: 'Zostało',
-                              amount: difference,
-                              currency: currency,
-                              color: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.color ??
-                                  Colors.black,
-                            ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 16),
                       Expanded(
                         child: CalendarList(
@@ -130,26 +101,4 @@ class HomeScreen extends StatelessWidget {
       },
     );
   }
-}
-
-Widget _summaryRow({
-  required BuildContext context,
-  required String label,
-  required double amount,
-  required String currency,
-  required Color color,
-}) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(
-        label,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
-      Text(
-        '${amount.toStringAsFixed(2)} $currency',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
-      ),
-    ],
-  );
 }

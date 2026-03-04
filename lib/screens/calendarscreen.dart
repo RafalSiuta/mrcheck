@@ -6,6 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../models/cash_model/cash.dart';
 import '../models/value_model/value_item.dart';
 import '../providers/cashprovider.dart';
+import '../providers/walletprovider.dart';
 import '../utils/id_generator/id_generator.dart';
 import '../utils/routes/custom_route.dart';
 import '../widgets/calendar/marker/calendar_marker.dart';
@@ -20,8 +21,8 @@ class CalendarScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color ink = Color(0xFF0F0F0F);
-    return Consumer<CashProvider>(
-      builder: (context, cashProvider, _) {
+    return Consumer2<CashProvider, WalletProvider>(
+      builder: (context, cashProvider, walletProvider, _) {
         final selectedCash = [...cashProvider.selectedDayCash]
           ..sort((a, b) => b.date.compareTo(a.date));
 
@@ -204,15 +205,19 @@ class CalendarScreen extends StatelessWidget {
                         }
                       }
 
-                      final difference = totalIncome - totalExpense;
                       final monthLabel = DateFormat('LLLL yyyy', 'pl_PL')
                           .format(focusedMonth);
+                      final currentWallet = walletProvider.currentWallet();
+                      final remainingAmount = currentWallet?.value ?? 0;
+                      final remainingCurrency = currentWallet?.currency ?? currency;
 
                       Widget summaryRow({
                         required String label,
                         required double amount,
                         required Color color,
+                        String? rowCurrency,
                       }) {
+                        final effectiveCurrency = rowCurrency ?? currency;
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -221,7 +226,7 @@ class CalendarScreen extends StatelessWidget {
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             Text(
-                              '${amount.toStringAsFixed(2)} $currency',
+                              '${amount.toStringAsFixed(2)} $effectiveCurrency',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -260,7 +265,8 @@ class CalendarScreen extends StatelessWidget {
                             const SizedBox(height: 6),
                             summaryRow(
                               label: 'Zostało',
-                              amount: difference,
+                              amount: remainingAmount,
+                              rowCurrency: remainingCurrency,
                               color: Theme.of(context)
                                       .textTheme
                                       .titleMedium

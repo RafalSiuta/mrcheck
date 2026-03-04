@@ -37,7 +37,8 @@ class WalletScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('portfele'.capitalizeFirstLetter(),
+                    Text(
+                      'portfele'.capitalizeFirstLetter(),
                         style: Theme.of(context).textTheme.headlineLarge),
                     IconBtn(
                       icon: Icons.add,
