@@ -10,7 +10,7 @@ class Wallet {
     required this.title,
     required this.value,
     required this.date,
-    this.icon = 0,
+    this.icon = 0, 
     this.color = 0xFFFFFFFF,
     this.currency = 'zł',
     this.itemsList = const [],

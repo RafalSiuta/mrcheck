@@ -19,6 +19,37 @@ class PrefsHelper {
     return prefs.getBool(key);
   }
 
+  Future<bool> saveDouble({
+    required String key,
+    required List<double> values,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final payload = values.map((value) => value.toString()).toList();
+    return prefs.setStringList(key, payload);
+  }
+
+  Future<List<double>> readDouble({
+    required String key,
+    List<double> fallback = const <double>[],
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawValues = prefs.getStringList(key);
+    if (rawValues == null || rawValues.isEmpty) {
+      return List<double>.from(fallback);
+    }
+
+    final parsed = rawValues
+        .map((value) => double.tryParse(value))
+        .whereType<double>()
+        .toList();
+
+    if (parsed.isEmpty) {
+      return List<double>.from(fallback);
+    }
+
+    return parsed;
+  }
+
   Future<bool> saveCurrencyOptions({
     required String key,
     required List<CurrencyOption> values,

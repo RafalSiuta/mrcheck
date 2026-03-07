@@ -11,14 +11,17 @@ class SettingsProvider extends ChangeNotifier {
   static const String _lockWalletKey = 'lockwalletData';
 
   final PrefsHelper _prefs = const PrefsHelper();
-  List<CurrencyOption> _currencies = List<CurrencyOption>.from(defaultCurrencies);
+  List<CurrencyOption> _currencies =
+      List<CurrencyOption>.from(defaultCurrencies);
   bool _lockWallet = false;
 
-  List<CurrencyOption> get currencies => List<CurrencyOption>.unmodifiable(_currencies);
+  List<CurrencyOption> get currencies =>
+      List<CurrencyOption>.unmodifiable(_currencies);
   bool get lockWallet => _lockWallet;
 
   Future<void> _init() async {
     _lockWallet = await _prefs.readBool(_lockWalletKey) ?? false;
+    _currencies = await _readCurrenciesFromPrefs();
     notifyListeners();
   }
 
@@ -31,7 +34,8 @@ class SettingsProvider extends ChangeNotifier {
   double rateFor(String currencyShort) {
     final match = _currencies.firstWhere(
       (option) => option.short.toLowerCase() == currencyShort.toLowerCase(),
-      orElse: () => const CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
+      orElse: () =>
+          const CurrencyOption(symbol: 'PLN', short: 'zł', valueToPln: 1),
     );
     return match.valueToPln;
   }
@@ -41,9 +45,38 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateCurrencyAt(int index, CurrencyOption option) {
+  Future<void> updateCurrencyAt(int index, CurrencyOption option) async {
     if (index < 0 || index >= _currencies.length) return;
     _currencies[index] = option;
+    await _prefs.saveDouble(
+      key: option.symbol,
+      values: <double>[option.valueToPln],
+    );
     notifyListeners();
+  }
+
+  Future<void> updateCurrencyValue(String symbol, double valueToPln) async {
+    final index =
+        _currencies.indexWhere((currency) => currency.symbol == symbol);
+    if (index == -1) return;
+
+    _currencies[index] = _currencies[index].copyWith(valueToPln: valueToPln);
+    await _prefs.saveDouble(
+      key: symbol,
+      values: <double>[valueToPln],
+    );
+    notifyListeners();
+  }
+
+  Future<List<CurrencyOption>> _readCurrenciesFromPrefs() async {
+    final List<CurrencyOption> list = [];
+    for (final currency in defaultCurrencies) {
+      final values = await _prefs.readDouble(
+        key: currency.symbol,
+        fallback: <double>[currency.valueToPln],
+      );
+      list.add(currency.copyWith(valueToPln: values.first));
+    }
+    return list;
   }
 }
