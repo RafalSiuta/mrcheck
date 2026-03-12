@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -18,6 +18,22 @@ class CalendarMarkerValue {
   final double amount;
   final String currency;
   final bool isIncome;
+}
+
+class CashSearchResult {
+  const CashSearchResult({
+    required this.cash,
+    required this.item,
+  });
+
+  final Cash cash;
+  final ValueItem item;
+
+  double get value => item.value;
+  String get name => item.name;
+  DateTime get date => cash.date;
+  String get currency => cash.currency;
+  bool get isIncome => cash.isIncome;
 }
 
 class CashProvider extends ChangeNotifier {
@@ -41,10 +57,15 @@ class CashProvider extends ChangeNotifier {
   DateTime get now => _seedNow;
   DateTime get today => _seedToday;
   String get weekdayLabel => DateFormat('EEEE', 'pl_PL').format(_seedNow);
-  String get formattedDate => DateFormat('dd MMM yyyy', 'pl_PL').format(_seedNow);
+  String get formattedDate =>
+      DateFormat('dd MMM yyyy', 'pl_PL').format(_seedNow);
   bool isSameDayLocal(DateTime a, DateTime b) =>
       _normalizeDate(a) == _normalizeDate(b);
   double sumItems(Cash cash) => _sumItems(cash);
+  String formatDisplayDate(DateTime date) =>
+      DateFormat('dd MMM yyyy', 'pl_PL').format(date);
+  String formatWeekdayLabel(DateTime date) =>
+      DateFormat('EEEE', 'pl_PL').format(date);
   DateTime get focusedDay => _focusedDay;
   DateTime get selectedDay => _selectedDay;
   CalendarFormat get calendarFormat => _calendarFormat;
@@ -55,7 +76,7 @@ class CashProvider extends ChangeNotifier {
   Future<void> init() async {
     await _databaseHelper.initializeHive();
     _cashList = _databaseHelper.getAllCash();
-     //_cashList = sampleCashData(); // utils/test_data.dart - uncomment to preload fixtures.
+    //_cashList = sampleCashData(); // utils/test_data.dart - uncomment to preload fixtures.
     _initialized = true;
     notifyListeners();
   }
@@ -172,6 +193,57 @@ class CashProvider extends ChangeNotifier {
     await _databaseHelper.deleteCash(id);
     _cashList = _databaseHelper.getAllCash();
     notifyListeners();
+  }
+
+  List<CashSearchResult> searchCash({
+    String keyword = '',
+    DateTimeRange? dateRange,
+    List<String> categories = const [],
+  }) {
+    final normalizedKeyword = keyword.trim().toLowerCase();
+    final selectedCategories =
+        categories.map((category) => category.toLowerCase()).toSet();
+    final normalizedStart =
+        dateRange == null ? null : _normalizeDate(dateRange.start);
+    final normalizedEnd =
+        dateRange == null ? null : _normalizeDate(dateRange.end);
+
+    final List<CashSearchResult> results = [];
+
+    for (final cash in _cashList) {
+      final normalizedCashDate = _normalizeDate(cash.date);
+      final matchesDate = normalizedStart == null ||
+          normalizedEnd == null ||
+          (!normalizedCashDate.isBefore(normalizedStart) &&
+              !normalizedCashDate.isAfter(normalizedEnd));
+
+      if (!matchesDate) {
+        continue;
+      }
+
+      for (final item in cash.itemsList) {
+        final itemName = item.name.toLowerCase();
+        final itemCategories =
+            item.categories.map((category) => category.toLowerCase()).toSet();
+        final matchesKeyword = normalizedKeyword.isEmpty ||
+            itemName.contains(normalizedKeyword) ||
+            cash.name.toLowerCase().contains(normalizedKeyword);
+        final matchesCategory = selectedCategories.isEmpty ||
+            selectedCategories.any(itemCategories.contains);
+
+        if (matchesKeyword && matchesCategory) {
+          results.add(
+            CashSearchResult(
+              cash: cash,
+              item: item,
+            ),
+          );
+        }
+      }
+    }
+
+    results.sort((a, b) => b.date.compareTo(a.date));
+    return results;
   }
 
   Map<DateTime, List<Cash>> _groupCashByDay(List<Cash> cashList) {

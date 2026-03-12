@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mrcash/providers/backupPprovider.dart';
 import 'package:mrcash/providers/settingsprovider.dart';
 import 'package:mrcash/utils/extensions/string_extension.dart';
 import 'package:provider/provider.dart';
@@ -8,8 +9,8 @@ class SetsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, _) {
+    return Consumer2<SettingsProvider, BackupProvider>(
+      builder: (context, settingsProvider, backupProvider, _) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
@@ -20,7 +21,8 @@ class SetsScreen extends StatelessWidget {
                 Text('ogólne'.capitalizeFirstLetter(),
                     style: Theme.of(context).textTheme.headlineLarge),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -38,10 +40,34 @@ class SetsScreen extends StatelessWidget {
                           },
                         ),
                       ),
-
-
-
                     ],
+                  ),
+                ),
+                InkWell(
+                  onTap: () async {
+                    await backupProvider.exportBackupFiles();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Backup exported successfully.'),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'eksportuj backup',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const Icon(Icons.download),
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -10,12 +10,13 @@ import 'package:mrcash/screens/mainscreen.dart';
 import 'package:mrcash/screens/settings/settingsscreen.dart';
 import 'package:mrcash/utils/routes/custom_route.dart';
 import 'package:provider/provider.dart';
+import 'providers/backupPprovider.dart';
 import 'providers/cashprovider.dart';
 import 'providers/settingsprovider.dart';
 import 'providers/walletprovider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-Future<void> main() async{
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Intl.defaultLocale = 'pl_PL';
   await initializeDateFormatting('pl_PL', null);
@@ -79,6 +80,20 @@ class MyApp extends StatelessWidget {
               (previous?..updateSettings(settings)) ??
               WalletProvider(settings: settings),
         ),
+        ChangeNotifierProxyProvider2<CashProvider, WalletProvider,
+            BackupProvider>(
+          create: (_) => BackupProvider(),
+          update: (context, cashProvider, walletProvider, previous) =>
+              (previous
+                ?..updateProviders(
+                  cashProvider: cashProvider,
+                  walletProvider: walletProvider,
+                )) ??
+              BackupProvider(
+                cashProvider: cashProvider,
+                walletProvider: walletProvider,
+              ),
+        ),
       ],
       child: MaterialApp(
         title: 'MrCash',
@@ -89,11 +104,12 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [Locale('pl', 'PL'),],
+        supportedLocales: [
+          Locale('pl', 'PL'),
+        ],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
-
           scaffoldBackgroundColor: const Color(0xfff5f5f5),
           textTheme: TextTheme(
             headlineLarge: GoogleFonts.exo2(
