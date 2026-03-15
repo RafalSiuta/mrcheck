@@ -14,7 +14,7 @@ import '../utils/id_generator/id_generator.dart';
 import '../widgets/cards/cash_card.dart';
 import '../widgets/dialogs/color_dialog.dart';
 import '../widgets/dialogs/icon_dialog.dart';
-import '../widgets/dialogs/inutdialog.dart';
+import '../widgets/dialogs/inputdialog.dart';
 import '../widgets/dialogs/wallet_sets_dialog.dart';
 import '../widgets/menu_nav/creator_nav.dart';
 
@@ -270,8 +270,7 @@ class _WalletCreatorState extends State<WalletCreator> {
 
   Future<void> _saveWallet() async {
     final provider = context.read<WalletProvider>();
-    final walletId =
-        widget.wallet.id.isNotEmpty ? widget.wallet.id : makeId();
+    final walletId = widget.wallet.id.isNotEmpty ? widget.wallet.id : makeId();
     final updatedWallet = Wallet(
       id: walletId,
       title: _titleController.text.trim(),
@@ -388,6 +387,7 @@ class _WalletCreatorState extends State<WalletCreator> {
           value: -result.amount,
           date: now,
           categories: const ['transfer_out'],
+          isIncome: false,
         ),
       );
       _pendingTransfers.add(
@@ -399,6 +399,7 @@ class _WalletCreatorState extends State<WalletCreator> {
             value: destinationAmount,
             date: now,
             categories: const ['transfer_in'],
+            isIncome: true,
           ),
         ),
       );
@@ -412,15 +413,18 @@ class _WalletCreatorState extends State<WalletCreator> {
       });
     }
     final isEdit = item != null && index != null;
-    final result = await showDialog<InutDialogResult>(
+    final result = await showDialog<InputDialogResult>(
       context: context,
-      builder: (_) => InutDialog(
+      builder: (_) => InputDialog(
         title: isEdit ? 'Edytuj pozycję' : 'Dodaj pozycję',
         currency: _selectedCurrency,
         initialName: item?.name ?? '',
-        initialValue: item != null ? item.value.toStringAsFixed(2) : '',
+        initialValue: item != null ? item.value.abs().toStringAsFixed(2) : '',
         initialCategories: item?.categories ?? const [],
+        initialIsIncome:
+            item?.isIncome ?? (item != null ? item.value >= 0 : true),
         showCategories: false,
+        showIncomeOption: true,
         confirmLabel: isEdit ? 'Zapisz' : 'Dodaj',
       ),
     );
@@ -434,15 +438,18 @@ class _WalletCreatorState extends State<WalletCreator> {
     }
 
     setState(() {
+      final signedValue =
+          result.isIncome ? result.value.abs() : -result.value.abs();
       if (isEdit) {
         final editIndex = index;
         final existing = _items[editIndex];
         _items[editIndex] = ValueItem(
           id: existing.id,
           name: result.name,
-          value: result.value,
+          value: signedValue,
           date: existing.date,
           categories: result.categories,
+          isIncome: result.isIncome,
         );
       } else {
         final now = DateTime.now();
@@ -450,9 +457,10 @@ class _WalletCreatorState extends State<WalletCreator> {
           ValueItem(
             id: makeId(),
             name: result.name,
-            value: result.value,
+            value: signedValue,
             date: now,
             categories: result.categories,
+            isIncome: result.isIncome,
           ),
         );
       }
@@ -526,8 +534,9 @@ class _WalletCreatorState extends State<WalletCreator> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: TextButton(
                     style: TextButton.styleFrom(
-                      backgroundColor:
-                          _selectedCurrency == option.short ? Colors.grey.shade200 : null,
+                      backgroundColor: _selectedCurrency == option.short
+                          ? Colors.grey.shade200
+                          : null,
                       foregroundColor: Colors.black87,
                     ),
                     onPressed: () => Navigator.of(context).pop(option),
@@ -666,8 +675,7 @@ class _WalletCreatorState extends State<WalletCreator> {
 
   String _currencySymbol(String shortCurrency) {
     final match = _currencyOptions.where(
-      (option) =>
-          option.short.toLowerCase() == shortCurrency.toLowerCase(),
+      (option) => option.short.toLowerCase() == shortCurrency.toLowerCase(),
     );
     if (match.isNotEmpty) {
       return match.first.symbol;
@@ -696,6 +704,7 @@ class _WalletCreatorState extends State<WalletCreator> {
             ),
             date: item.date,
             categories: item.categories,
+            isIncome: item.isIncome,
           ),
         )
         .toList();
@@ -744,8 +753,8 @@ class _WalletCreatorState extends State<WalletCreator> {
                 });
               }
 
-              final currentWallet =
-                  walletProvider.currentWallet(excludeWalletId: widget.wallet.id);
+              final currentWallet = walletProvider.currentWallet(
+                  excludeWalletId: widget.wallet.id);
               if (currentWallet == null) {
                 setState(() {
                   _isCurrentWallet = true;
@@ -756,7 +765,8 @@ class _WalletCreatorState extends State<WalletCreator> {
                 return;
               }
 
-              final confirmed = await _confirmSwitchCurrentWallet(currentWallet);
+              final confirmed =
+                  await _confirmSwitchCurrentWallet(currentWallet);
               if (!mounted) return;
 
               if (confirmed) {
@@ -780,8 +790,7 @@ class _WalletCreatorState extends State<WalletCreator> {
 
   @override
   Widget build(BuildContext context) {
-    final iconData =
-        IconData(_selectedIconCode, fontFamily: 'MaterialIcons');
+    final iconData = IconData(_selectedIconCode, fontFamily: 'MaterialIcons');
     final currency = _selectedCurrency;
     const horizontalPadding = EdgeInsets.symmetric(horizontal: 16);
 
@@ -794,7 +803,6 @@ class _WalletCreatorState extends State<WalletCreator> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -886,9 +894,8 @@ class _WalletCreatorState extends State<WalletCreator> {
                             ),
                             itemBuilder: (context, index) {
                               final item = _items[index];
-                              final isIncome = item.value == 0
-                                  ? null
-                                  : item.value > 0;
+                              final isIncome =
+                                  item.value == 0 ? null : item.isIncome;
                               return CashCard(
                                 name: item.name,
                                 value: item.value,
@@ -921,10 +928,12 @@ class _WalletCreatorState extends State<WalletCreator> {
                         icon: Icons.currency_exchange,
                       ),
                       CreatorNavItem(title: 'waluta', icon: Icons.attach_money),
-                      CreatorNavItem(title: 'symbol', icon: Icons.account_balance_wallet),
+                      CreatorNavItem(
+                          title: 'symbol', icon: Icons.account_balance_wallet),
                       CreatorNavItem(title: 'kolor', icon: Icons.color_lens),
                       CreatorNavItem(title: 'usuń', icon: Icons.delete),
-                      CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
+                      CreatorNavItem(
+                          title: 'cofnij', icon: Icons.arrow_back_ios_new),
                     ],
                     selectedIndex: -1,
                     navIconSize: 24,

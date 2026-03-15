@@ -25,6 +25,7 @@ class WalletCard extends StatelessWidget {
     final textStyle =
         Theme.of(context).textTheme.bodyMedium?.copyWith(color: ink);
     final totalText = total.toStringAsFixed(2);
+    final displayTitle = lockWallet ? maskText(title, maskChar: 'x') : title;
     final displayTotal = lockWallet ? maskText(totalText) : totalText;
 
     return SizedBox(
@@ -54,7 +55,7 @@ class WalletCard extends StatelessWidget {
                       text: TextSpan(
                         style: textStyle,
                         children: [
-                          TextSpan(text: '$title\n'),
+                          TextSpan(text: '$displayTitle\n'),
                           const TextSpan(text: 'total '),
                           TextSpan(text: displayTotal),
                         ],

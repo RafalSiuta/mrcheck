@@ -163,6 +163,7 @@ class BackupProvider extends ChangeNotifier {
       'name': item.name,
       'value': item.value,
       'categories': item.categories,
+      'isIncome': item.isIncome,
     };
   }
 

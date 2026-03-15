@@ -3,27 +3,31 @@ import 'package:mrcash/utils/constans/category_list.dart';
 
 const Color ink = Color(0xFF0F0F0F);
 
-class InutDialogResult {
-  const InutDialogResult({
+class InputDialogResult {
+  const InputDialogResult({
     required this.name,
     required this.value,
     required this.categories,
+    required this.isIncome,
   });
 
   final String name;
   final double value;
   final List<String> categories;
+  final bool isIncome;
 }
 
-class InutDialog extends StatefulWidget {
-  const InutDialog({
+class InputDialog extends StatefulWidget {
+  const InputDialog({
     required this.title,
     this.currency,
     this.initialName = '',
     this.initialValue = '',
     this.initialCategories = const [],
+    this.initialIsIncome = true,
     this.confirmLabel = 'Zapisz',
     this.showCategories = true,
+    this.showIncomeOption = false,
     super.key,
   });
 
@@ -32,19 +36,22 @@ class InutDialog extends StatefulWidget {
   final String initialName;
   final String initialValue;
   final List<String> initialCategories;
+  final bool initialIsIncome;
   final String confirmLabel;
   final bool showCategories;
+  final bool showIncomeOption;
 
   @override
-  State<InutDialog> createState() => _InutDialogState();
+  State<InputDialog> createState() => _InputDialogState();
 }
 
-class _InutDialogState extends State<InutDialog> {
+class _InputDialogState extends State<InputDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _valueController;
   late Set<String> _selectedCategories;
   String? _errorText;
   bool _showCategories = false;
+  late bool _isIncome;
 
   @override
   void initState() {
@@ -52,6 +59,7 @@ class _InutDialogState extends State<InutDialog> {
     _nameController = TextEditingController(text: widget.initialName);
     _valueController = TextEditingController(text: widget.initialValue);
     _selectedCategories = {...widget.initialCategories};
+    _isIncome = widget.initialIsIncome;
   }
 
   @override
@@ -73,8 +81,7 @@ class _InutDialogState extends State<InutDialog> {
 
   void _submit() {
     final name = _nameController.text.trim();
-    final value =
-        double.tryParse(_valueController.text.replaceAll(',', '.'));
+    final value = double.tryParse(_valueController.text.replaceAll(',', '.'));
 
     if (name.isEmpty || value == null) {
       setState(() {
@@ -84,10 +91,11 @@ class _InutDialogState extends State<InutDialog> {
     }
 
     Navigator.of(context).pop(
-      InutDialogResult(
+      InputDialogResult(
         name: name,
         value: value,
         categories: _selectedCategories.toList(),
+        isIncome: _isIncome,
       ),
     );
   }
@@ -96,8 +104,8 @@ class _InutDialogState extends State<InutDialog> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final isKeyboardOpen = media.viewInsets.bottom > 0;
-   // final availableHeight = media.size.height - media.viewInsets.bottom;
-   // final maxDialogHeight = availableHeight * 0.7;
+    // final availableHeight = media.size.height - media.viewInsets.bottom;
+    // final maxDialogHeight = availableHeight * 0.7;
 
     return AnimatedPadding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
@@ -126,6 +134,30 @@ class _InutDialogState extends State<InutDialog> {
               ),
               onSubmitted: (_) => _submit(),
             ),
+            if (widget.showIncomeOption) ...[
+              const SizedBox(height: 8),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Transform.scale(
+                    scale: 0.9,
+                    child: Switch(
+                      value: _isIncome,
+                      onChanged: (val) {
+                        setState(() {
+                          _isIncome = val;
+                        });
+                      },
+                    ),
+                  ),
+                  Text(
+                    _isIncome ? 'przychody' : 'wydatki',
+                    style: Theme.of(context).inputDecorationTheme.helperStyle,
+                  ),
+                ],
+              ),
+            ],
             if (widget.showCategories) ...[
               // const SizedBox(height: 12),
 
@@ -166,10 +198,10 @@ class _InutDialogState extends State<InutDialog> {
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: List<Widget>.generate(categoryList.length, (index) {
+                    children:
+                        List<Widget>.generate(categoryList.length, (index) {
                       final category = categoryList[index];
-                      final isSelected =
-                          _selectedCategories.contains(category);
+                      final isSelected = _selectedCategories.contains(category);
                       return FilterChip(
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: const VisualDensity(

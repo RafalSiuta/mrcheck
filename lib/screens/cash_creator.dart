@@ -9,7 +9,7 @@ import '../providers/cashprovider.dart';
 import '../providers/walletprovider.dart';
 import '../utils/id_generator/id_generator.dart';
 import '../widgets/cards/cash_card.dart';
-import '../widgets/dialogs/inutdialog.dart';
+import '../widgets/dialogs/inputdialog.dart';
 import '../widgets/menu_nav/creator_nav.dart';
 
 class CashCreator extends StatefulWidget {
@@ -80,8 +80,7 @@ class _CashCreatorState extends State<CashCreator> {
   Future<void> _saveCash() async {
     final provider = context.read<CashProvider>();
     final walletProvider = context.read<WalletProvider>();
-    final cashId =
-        widget.cash.id.isNotEmpty ? widget.cash.id : makeId();
+    final cashId = widget.cash.id.isNotEmpty ? widget.cash.id : makeId();
     final previousCash = widget.cash.id.isNotEmpty &&
             provider.cashList.any((c) => c.id == widget.cash.id)
         ? widget.cash
@@ -129,9 +128,9 @@ class _CashCreatorState extends State<CashCreator> {
       });
     }
     final isEdit = item != null && index != null;
-    final result = await showDialog<InutDialogResult>(
+    final result = await showDialog<InputDialogResult>(
       context: context,
-      builder: (_) => InutDialog(
+      builder: (_) => InputDialog(
         title: isEdit ? 'Edytuj pozycję' : 'Dodaj pozycję',
         currency: widget.cash.currency,
         initialName: item?.name ?? '',
@@ -159,6 +158,7 @@ class _CashCreatorState extends State<CashCreator> {
           value: result.value,
           date: existing.date,
           categories: result.categories,
+          isIncome: _isIncome,
         );
       } else {
         final now = DateTime.now();
@@ -169,6 +169,7 @@ class _CashCreatorState extends State<CashCreator> {
             value: result.value,
             date: now,
             categories: result.categories,
+            isIncome: _isIncome,
           ),
         );
       }
@@ -254,9 +255,7 @@ class _CashCreatorState extends State<CashCreator> {
                           children: [
                             Text(
                               formattedDate,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge,
+                              style: Theme.of(context).textTheme.headlineLarge,
                             ),
                             TextField(
                               controller: _titleController,
@@ -270,7 +269,8 @@ class _CashCreatorState extends State<CashCreator> {
                                 contentPadding: EdgeInsets.zero,
                                 enabledBorder: InputBorder.none,
                                 focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.transparent),
+                                  borderSide:
+                                      BorderSide(color: Colors.transparent),
                                 ),
                                 hintText: 'Tytuł',
                               ),
@@ -278,9 +278,7 @@ class _CashCreatorState extends State<CashCreator> {
                             const SizedBox(height: 8),
                             Text(
                               'razem: ${_itemsTotal.toStringAsFixed(2)} $currency',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall,
+                              style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             const SizedBox(height: 8),
                             Column(
@@ -367,7 +365,8 @@ class _CashCreatorState extends State<CashCreator> {
                   CreatorNavItem(title: 'data', icon: Icons.calendar_month),
                   // CreatorNavItem(title: 'rachunek', icon: Icons.camera_alt),
                   CreatorNavItem(title: 'usuń', icon: Icons.delete),
-                  CreatorNavItem(title: 'cofnij', icon: Icons.arrow_back_ios_new),
+                  CreatorNavItem(
+                      title: 'cofnij', icon: Icons.arrow_back_ios_new),
                 ],
                 selectedIndex: -1,
                 navIconSize: 24,

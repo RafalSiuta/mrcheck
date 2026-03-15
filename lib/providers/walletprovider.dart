@@ -22,7 +22,8 @@ class WalletProvider extends ChangeNotifier {
 
   Wallet? currentWallet({String? excludeWalletId}) {
     for (final wallet in _wallets) {
-      final isExcluded = excludeWalletId != null && wallet.id == excludeWalletId;
+      final isExcluded =
+          excludeWalletId != null && wallet.id == excludeWalletId;
       if (!isExcluded && wallet.isCurrentWallet) {
         return wallet;
       }
@@ -131,7 +132,8 @@ class WalletProvider extends ChangeNotifier {
     items.removeWhere((item) => item.id == itemId);
 
     if (previousCash != null && previousCash.id != cash.id) {
-      items.removeWhere((item) => item.id == _cashWalletItemId(previousCash.id));
+      items
+          .removeWhere((item) => item.id == _cashWalletItemId(previousCash.id));
     }
 
     final signedAmount = _signedCashAmount(cash);
@@ -150,6 +152,7 @@ class WalletProvider extends ChangeNotifier {
             : cash.name.trim(),
         value: convertedAmount,
         categories: const ['cash_sync'],
+        isIncome: cash.isIncome,
       ),
     );
 
@@ -236,11 +239,13 @@ class WalletProvider extends ChangeNotifier {
   String _cashWalletItemId(String cashId) => 'cash:$cashId';
 
   double _signedCashAmount(Cash cash) {
-    final total = cash.itemsList.fold<double>(0, (sum, item) => sum + item.value);
+    final total =
+        cash.itemsList.fold<double>(0, (sum, item) => sum + item.value);
     return cash.isIncome ? total : -total;
   }
 
-  double _previousCashAmountInWalletCurrency(Cash? cash, String targetCurrency) {
+  double _previousCashAmountInWalletCurrency(
+      Cash? cash, String targetCurrency) {
     if (cash == null) return 0;
     return _convertAmount(
       amount: _signedCashAmount(cash),

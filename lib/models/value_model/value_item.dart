@@ -10,6 +10,7 @@ class ValueItem {
     required this.name,
     required this.value,
     this.categories = const [],
+    this.isIncome = false,
   });
 
   @HiveField(0)
@@ -26,4 +27,7 @@ class ValueItem {
 
   @HiveField(4)
   final List<String> categories;
+
+  @HiveField(5)
+  final bool isIncome;
 }

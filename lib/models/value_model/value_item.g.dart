@@ -31,13 +31,14 @@ class ValueItemAdapter extends TypeAdapter<ValueItem> {
       name: fields[2] as String,
       value: fields[3] as double,
       categories: categories,
+      isIncome: fields[5] as bool? ?? ((fields[3] as double) >= 0),
     );
   }
 
   @override
   void write(BinaryWriter writer, ValueItem obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class ValueItemAdapter extends TypeAdapter<ValueItem> {
       ..writeByte(3)
       ..write(obj.value)
       ..writeByte(4)
-      ..write(obj.categories);
+      ..write(obj.categories)
+      ..writeByte(5)
+      ..write(obj.isIncome);
   }
 
   @override
